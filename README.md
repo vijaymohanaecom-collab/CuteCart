@@ -77,7 +77,7 @@ A full-stack Point of Sale (POS) system built with Angular and Node.js, designed
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/CuteCart.git
+git clone https://github.com/vijaymohanaecom-collab/CuteCart.git
 cd CuteCart
 ```
 
