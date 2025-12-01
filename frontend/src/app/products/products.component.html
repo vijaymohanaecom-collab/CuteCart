@@ -1,0 +1,117 @@
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Products</h2>
+      <div class="header-actions">
+        <button (click)="downloadSampleCSV()" class="btn btn-secondary" title="Download sample CSV template">
+          📄 Sample CSV
+        </button>
+        <button (click)="triggerFileInput()" class="btn btn-success" title="Import products from CSV">
+          📥 Import CSV
+        </button>
+        <button (click)="exportToCSV()" class="btn btn-info" title="Export all products to CSV">
+          📤 Export CSV
+        </button>
+        <button (click)="openAddModal()" class="btn btn-primary">
+          ➕ Add Product
+        </button>
+      </div>
+    </div>
+    
+    <!-- Hidden file input for CSV import -->
+    <input 
+      type="file" 
+      id="csvFileInput" 
+      accept=".csv" 
+      (change)="onFileSelected($event)" 
+      style="display: none;"
+    />
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Category</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of products">
+            <td>{{ product.id }}</td>
+            <td>{{ product.name }}</td>
+            <td>₹{{ product.price | number:'1.2-2' }}</td>
+            <td>
+              <span [class.stock-badge]="true" [class.stock-low]="(product.stock || 0) < 10">
+                {{ product.stock || 0 }}
+              </span>
+            </td>
+            <td>{{ product.category || '-' }}</td>
+            <td>
+              <button (click)="openEditModal(product)" class="btn btn-sm btn-warning action-btn">Edit</button>
+              <button (click)="deleteProduct(product)" class="btn btn-sm btn-danger action-btn">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">{{ editMode ? 'Edit' : 'Add' }} Product</h3>
+      <button (click)="closeModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Product ID</label>
+      <input type="text" class="form-control" [(ngModel)]="currentProduct.id" [disabled]="editMode" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Name *</label>
+      <input type="text" class="form-control" [(ngModel)]="currentProduct.name" required />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea class="form-control" [(ngModel)]="currentProduct.description"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Price *</label>
+      <input type="number" class="form-control" [(ngModel)]="currentProduct.price" required />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Purchase Price</label>
+      <input type="number" class="form-control" [(ngModel)]="currentProduct.purchase_price" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Stock</label>
+      <input type="number" class="form-control" [(ngModel)]="currentProduct.stock" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Barcode</label>
+      <input type="text" class="form-control" [(ngModel)]="currentProduct.barcode" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <input type="text" class="form-control" [(ngModel)]="currentProduct.category" />
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="closeModal()" class="btn btn-secondary">Cancel</button>
+      <button (click)="saveProduct()" class="btn btn-primary">Save</button>
+    </div>
+  </div>
+</div>

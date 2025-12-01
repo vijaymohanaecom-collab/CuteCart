@@ -1,0 +1,55 @@
+<div class="container">
+  <div class="card">
+    <h2 class="card-title">Settings</h2>
+
+    <div class="form-group">
+      <label class="form-label">Store Name</label>
+      <input type="text" class="form-control" [(ngModel)]="settings.store_name" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Store Address</label>
+      <textarea class="form-control" [(ngModel)]="settings.store_address"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Store Phone</label>
+      <input type="text" class="form-control" [(ngModel)]="settings.store_phone" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Store Email</label>
+      <input type="email" class="form-control" [(ngModel)]="settings.store_email" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Tax Rate (%)</label>
+      <input type="number" class="form-control" [(ngModel)]="settings.tax_rate" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Currency</label>
+      <input type="text" class="form-control" [(ngModel)]="settings.currency" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Invoice Prefix</label>
+      <input type="text" class="form-control" [(ngModel)]="settings.invoice_prefix" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Invoice Footer</label>
+      <textarea class="form-control" [(ngModel)]="settings.invoice_footer"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Low Stock Threshold</label>
+      <input type="number" class="form-control" [(ngModel)]="settings.low_stock_threshold" />
+    </div>
+
+    <div class="d-flex gap-2">
+      <button (click)="saveSettings()" class="btn btn-primary">Save Settings</button>
+      <button (click)="backupDatabase()" class="btn btn-warning">Backup Database</button>
+    </div>
+  </div>
+</div>

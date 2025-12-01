@@ -1,0 +1,163 @@
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Invoices</h2>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Invoice #</th>
+            <th>Customer</th>
+            <th>Date</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let invoice of invoices">
+            <td>{{ invoice.invoice_number }}</td>
+            <td>{{ invoice.customer_name || 'Walk-in' }}</td>
+            <td>{{ invoice.created_at | date:'short' }}</td>
+            <td>{{ invoice.items.length }}</td>
+            <td>₹{{ invoice.total | number:'1.2-2' }}</td>
+            <td>
+              <button (click)="viewInvoice(invoice)" class="btn btn-sm btn-primary action-btn">View</button>
+              <button (click)="openEditModal(invoice)" class="btn btn-sm btn-warning action-btn">Edit</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice Modal -->
+<div *ngIf="showModal && selectedInvoice" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" style="max-width: 800px;" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Invoice {{ selectedInvoice.invoice_number }}</h3>
+      <button (click)="closeModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="invoice-content">
+      <div class="invoice-company-header">
+        <h1>CuteCart</h1>
+        <p>No. 4/204, Opp: NRS Complex (Apollo Pharmacy), Nookampalayam Road</p>
+        <p>Perumbakkam Chennai - 600100</p>
+        <p>Phone: 9003498836</p>
+        <p>Email: vijaymahasecom@gmail.com</p>
+        <p>Website: www.cutecart.in</p>
+      </div>
+
+      <div class="invoice-title-section">
+        <h2>INVOICE</h2>
+        <div class="invoice-meta">
+          <p><strong>Invoice #:</strong> {{ selectedInvoice.invoice_number }}</p>
+          <p><strong>Date:</strong> {{ selectedInvoice.created_at | date:'d MMMM yyyy \'at\' hh:mm a' }}</p>
+        </div>
+      </div>
+
+      <div class="invoice-bill-to">
+        <h3>Bill To:</h3>
+        <p>{{ selectedInvoice.customer_name || 'Walk-in Customer' }}</p>
+        <p *ngIf="selectedInvoice.customer_phone">Phone: {{ selectedInvoice.customer_phone }}</p>
+      </div>
+
+      <div class="invoice-table-container">
+        <table class="invoice-table">
+          <thead>
+            <tr>
+              <th>ITEM</th>
+              <th>QTY</th>
+              <th>PRICE</th>
+              <th>TOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of selectedInvoice.items">
+              <td>{{ item.product_name }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>₹{{ item.unit_price | number:'1.2-2' }}</td>
+              <td>₹{{ item.total_price | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="invoice-totals-section">
+        <div class="invoice-total-row">
+          <span>Subtotal:</span>
+          <span>₹{{ selectedInvoice.subtotal | number:'1.2-2' }}</span>
+        </div>
+        <div class="invoice-total-row" *ngIf="selectedInvoice.tax_rate > 0">
+          <span>Tax ({{ selectedInvoice.tax_rate }}%):</span>
+          <span>₹{{ selectedInvoice.tax_amount | number:'1.2-2' }}</span>
+        </div>
+        <div class="invoice-total-row" *ngIf="selectedInvoice.discount">
+          <span>Discount:</span>
+          <span>-₹{{ selectedInvoice.discount | number:'1.2-2' }}</span>
+        </div>
+        <div class="invoice-total-row grand-total-invoice">
+          <span>Total:</span>
+          <span>₹{{ selectedInvoice.total | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="invoice-payment-info">
+        <p><strong>Payment Method:</strong> {{ selectedInvoice.payment_method | titlecase }}</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="printInvoice()" class="btn btn-primary">Print</button>
+      <button (click)="closeModal()" class="btn btn-secondary">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Invoice Modal -->
+<div *ngIf="showEditModal && editInvoice" class="modal-overlay" (click)="closeEditModal()">
+  <div class="modal" style="max-width: 500px;" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Invoice {{ editInvoice.invoice_number }}</h3>
+      <button (click)="closeEditModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Customer Name</label>
+      <input 
+        type="text" 
+        class="form-control" 
+        [(ngModel)]="editInvoice.customer_name"
+        placeholder="Customer Name"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Customer Phone</label>
+      <input 
+        type="text" 
+        class="form-control" 
+        [(ngModel)]="editInvoice.customer_phone"
+        placeholder="Phone Number"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Payment Method</label>
+      <select class="form-control" [(ngModel)]="editInvoice.payment_method">
+        <option value="cash">Cash</option>
+        <option value="card">Card</option>
+        <option value="upi">UPI</option>
+      </select>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="closeEditModal()" class="btn btn-secondary">Cancel</button>
+      <button (click)="saveInvoiceEdit()" class="btn btn-primary">Save Changes</button>
+    </div>
+  </div>
+</div>

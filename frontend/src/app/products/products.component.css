@@ -1,0 +1,83 @@
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.header-actions .btn {
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  font-size: 13px;
+  padding: 8px 16px;
+}
+
+.header-actions .btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-info {
+  background: rgba(23, 162, 184, 0.2);
+  border-color: rgba(23, 162, 184, 0.4);
+}
+
+.btn-info:hover {
+  background: rgba(23, 162, 184, 0.3);
+  border-color: rgba(23, 162, 184, 0.6);
+}
+
+.btn-secondary {
+  background: rgba(108, 117, 125, 0.2);
+  border-color: rgba(108, 117, 125, 0.4);
+}
+
+.btn-secondary:hover {
+  background: rgba(108, 117, 125, 0.3);
+  border-color: rgba(108, 117, 125, 0.6);
+}
+
+/* Stock Badge */
+.stock-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  background: #d4edda;
+  color: #155724;
+}
+
+.stock-badge.stock-low {
+  background: #fff3cd;
+  color: #856404;
+}
+
+/* Action Buttons */
+.action-btn {
+  margin-right: 5px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.action-btn:last-child {
+  margin-right: 0;
+}
+
+@media (max-width: 768px) {
+  .header-actions {
+    flex-wrap: wrap;
+  }
+  
+  .header-actions button {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+  
+  .action-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}

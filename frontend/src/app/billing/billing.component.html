@@ -1,0 +1,250 @@
+<div class="billing-container">
+  <div class="main-content">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Products</h2>
+        <input 
+          type="text" 
+          class="search-input" 
+          placeholder="Search by name, category, or ID..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="searchProducts()"
+        />
+      </div>
+
+      <div class="table-container">
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Category</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr 
+              *ngFor="let product of filteredProducts" 
+              [class.low-stock-row]="(product.stock || 0) < 10"
+              [class.out-of-stock-row]="(product.stock || 0) === 0"
+            >
+              <td>{{ product.id }}</td>
+              <td>{{ product.name }}</td>
+              <td>₹{{ product.price | number:'1.2-2' }}</td>
+              <td>
+                <span 
+                  class="stock-badge" 
+                  [class.stock-low]="(product.stock || 0) < 10 && (product.stock || 0) > 0"
+                  [class.stock-out]="(product.stock || 0) === 0"
+                >
+                  {{ product.stock || 0 }}
+                </span>
+              </td>
+              <td>{{ product.category || '-' }}</td>
+              <td>
+                <button 
+                  class="btn btn-success btn-sm add-to-cart-btn" 
+                  (click)="addToCart(product)"
+                  [disabled]="(product.stock || 0) === 0"
+                >
+                  Add to Cart
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Section -->
+  <div class="cart-section">
+    <div class="cart-header">
+      <h3>Cart</h3>
+    </div>
+
+    <div class="cart-content">
+      <!-- Customer Info at Top -->
+      <div class="customer-info-top">
+        <div class="form-group">
+          <input type="text" placeholder="Customer Name (Optional)" [(ngModel)]="customerName" />
+        </div>
+        <div class="form-group">
+          <input type="text" placeholder="Phone (Optional)" [(ngModel)]="customerPhone" />
+        </div>
+      </div>
+
+      <!-- Cart Items Table -->
+      <div class="cart-items-container" *ngIf="cart.length > 0">
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Total</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of cart">
+              <td class="product-name-cell">{{ item.product_name }}</td>
+              <td>₹{{ item.unit_price | number:'1.2-2' }}</td>
+              <td>
+                <div class="quantity-controls">
+                  <button class="qty-btn" (click)="updateQuantity(item, item.quantity - 1)">-</button>
+                  <span class="qty-display">{{ item.quantity }}</span>
+                  <button class="qty-btn" (click)="updateQuantity(item, item.quantity + 1)">+</button>
+                </div>
+              </td>
+              <td class="total-cell">₹{{ item.total_price | number:'1.2-2' }}</td>
+              <td>
+                <button class="remove-btn" (click)="removeFromCart(item)">×</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="cart.length === 0" class="empty-cart-message">
+        Cart is empty. Click on products to add them.
+      </div>
+
+      <!-- Totals Section -->
+      <div class="cart-totals" *ngIf="cart.length > 0">
+        <div class="total-row">
+          <span>Subtotal:</span>
+          <span>₹{{ subtotal | number:'1.2-2' }}</span>
+        </div>
+        <div class="total-row" *ngIf="taxRate > 0">
+          <span>Tax ({{ taxRate }}%):</span>
+          <span>₹{{ taxAmount | number:'1.2-2' }}</span>
+        </div>
+        <div class="total-row discount-row">
+          <span>Discount:</span>
+          <div class="discount-input-wrapper">
+            <span class="currency-symbol">₹</span>
+            <input 
+              type="number" 
+              [(ngModel)]="discount"
+              (ngModelChange)="calculateTotals()"
+              min="0"
+              class="discount-input"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+        <div class="total-row grand-total">
+          <span>Total:</span>
+          <span>₹{{ total | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <!-- Payment Method -->
+      <div class="payment-section" *ngIf="cart.length > 0">
+        <label class="payment-label">Payment Method:</label>
+        <select class="payment-select" [(ngModel)]="paymentMethod">
+          <option value="cash">Cash</option>
+          <option value="card">Card</option>
+          <option value="upi">UPI</option>
+        </select>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="cart-actions" *ngIf="cart.length > 0">
+        <button class="btn-generate-invoice" (click)="openInvoicePreview()">
+          Generate Invoice
+        </button>
+        <button class="btn-clear-cart" (click)="clearCart()">
+          Clear Cart
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice Preview Modal -->
+<div class="modal-overlay" *ngIf="showInvoicePreview" (click)="closeInvoicePreview()">
+  <div class="invoice-modal" (click)="$event.stopPropagation()">
+    <div class="invoice-header-actions">
+      <button class="btn-save-sale" (click)="saveSale()" [disabled]="isSaving">
+        <span *ngIf="!isSaving">💾 Save Sale</span>
+        <span *ngIf="isSaving">⏳ Saving...</span>
+      </button>
+      <button class="btn-cancel-sale" (click)="closeInvoicePreview()" [disabled]="isSaving">
+        ✖ Cancel Sale
+      </button>
+    </div>
+
+    <div class="invoice-content">
+      <div class="invoice-company-header">
+        <h1>CuteCart</h1>
+        <p>No. 4/204, Opp: NRS Complex (Apollo Pharmacy), Nookampalayam Road</p>
+        <p>Perumbakkam Chennai - 600100</p>
+        <p>Phone: 9003498836</p>
+        <p>Email: vijaymahasecom@gmail.com</p>
+        <p>Website: www.cutecart.in</p>
+      </div>
+
+      <div class="invoice-title-section">
+        <h2>INVOICE</h2>
+        <div class="invoice-meta">
+          <p><strong>Invoice #:</strong> {{ invoiceNumber }}</p>
+          <p><strong>Date:</strong> {{ currentDate | date:'d MMMM yyyy \'at\' hh:mm a' }}</p>
+        </div>
+      </div>
+
+      <div class="invoice-bill-to">
+        <h3>Bill To:</h3>
+        <p>{{ customerName || 'Walk-in Customer' }}</p>
+        <p *ngIf="customerPhone">Phone: {{ customerPhone }}</p>
+      </div>
+
+      <div class="invoice-table-container">
+        <table class="invoice-table">
+          <thead>
+            <tr>
+              <th>ITEM</th>
+              <th>QTY</th>
+              <th>PRICE</th>
+              <th>TOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of cart">
+              <td>{{ item.product_name }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>₹{{ item.unit_price | number:'1.2-2' }}</td>
+              <td>₹{{ item.total_price | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="invoice-totals-section">
+        <div class="invoice-total-row">
+          <span>Subtotal:</span>
+          <span>₹{{ subtotal | number:'1.2-2' }}</span>
+        </div>
+        <div class="invoice-total-row" *ngIf="taxRate > 0">
+          <span>Tax ({{ taxRate }}%):</span>
+          <span>₹{{ taxAmount | number:'1.2-2' }}</span>
+        </div>
+        <div class="invoice-total-row" *ngIf="discount > 0">
+          <span>Discount:</span>
+          <span>-₹{{ discount | number:'1.2-2' }}</span>
+        </div>
+        <div class="invoice-total-row grand-total-invoice">
+          <span>Total:</span>
+          <span>₹{{ total | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="invoice-payment-info">
+        <p><strong>Payment Method:</strong> {{ paymentMethod | titlecase }}</p>
+      </div>
+    </div>
+  </div>
+</div>
