@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
+import { SettingsService } from '../services/settings.service';
 import { Settings } from '../models/settings.model';
 
 @Component({
@@ -28,7 +29,8 @@ export class SettingsComponent implements OnInit {
 
   constructor(
     private apiService: ApiService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private settingsService: SettingsService
   ) {}
 
   ngOnInit(): void {
@@ -46,9 +48,9 @@ export class SettingsComponent implements OnInit {
   }
 
   saveSettings(): void {
-    this.apiService.updateSettings(this.settings).subscribe({
+    this.settingsService.updateSettings(this.settings).subscribe({
       next: () => {
-        alert('Settings saved successfully!');
+        alert('Settings saved successfully! Changes will be applied across the application.');
       },
       error: (err) => {
         console.error('Error saving settings:', err);

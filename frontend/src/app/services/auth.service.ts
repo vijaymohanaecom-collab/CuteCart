@@ -15,16 +15,24 @@ export class AuthService {
   private inactivityTimer: any;
   private readonly INACTIVITY_TIMEOUT = 3 * 60 * 60 * 1000; // 3 hours
   private storageAvailable = true;
+  
+  // In-memory fallback storage
+  private memoryStorage: { [key: string]: string } = {};
 
   constructor(
     private http: HttpClient,
     private router: Router
   ) {
     this.checkStorageAvailability();
-    const user = this.getCurrentUser();
-    if (user) {
-      this.currentUserSubject.next(user);
-      this.resetInactivityTimer();
+    try {
+      const user = this.getCurrentUser();
+      if (user) {
+        this.currentUserSubject.next(user);
+        this.resetInactivityTimer();
+      }
+    } catch (e) {
+      console.warn('AuthService: Could not restore user session:', e);
+      // User will need to login - this is fine
     }
   }
 
@@ -41,28 +49,47 @@ export class AuthService {
 
   private safeStorageGet(key: string): string | null {
     try {
-      return localStorage.getItem(key);
+      const value = localStorage.getItem(key);
+      if (value) return value;
     } catch (e) {
-      console.warn('AuthService: localStorage not available, trying sessionStorage:', e);
-      try {
-        return sessionStorage.getItem(key);
-      } catch (e2) {
-        console.warn('AuthService: sessionStorage also not available:', e2);
-        return null;
-      }
+      console.warn('AuthService: localStorage not available:', e);
     }
+    
+    try {
+      const value = sessionStorage.getItem(key);
+      if (value) return value;
+    } catch (e) {
+      console.warn('AuthService: sessionStorage not available:', e);
+    }
+    
+    // Fallback to in-memory storage
+    return this.memoryStorage[key] || null;
   }
 
   private safeStorageSet(key: string, value: string): void {
+    let stored = false;
+    
     try {
       localStorage.setItem(key, value);
+      stored = true;
     } catch (e) {
-      console.warn('AuthService: localStorage not available, trying sessionStorage:', e);
+      console.warn('AuthService: localStorage not available:', e);
+    }
+    
+    if (!stored) {
       try {
         sessionStorage.setItem(key, value);
-      } catch (e2) {
-        console.warn('AuthService: sessionStorage also not available:', e2);
+        stored = true;
+      } catch (e) {
+        console.warn('AuthService: sessionStorage not available:', e);
       }
+    }
+    
+    // Always store in memory as backup
+    this.memoryStorage[key] = value;
+    
+    if (!stored) {
+      console.warn('AuthService: Using in-memory storage only. Data will be lost on page refresh.');
     }
   }
 
@@ -70,13 +97,17 @@ export class AuthService {
     try {
       localStorage.removeItem(key);
     } catch (e) {
-      console.warn('AuthService: localStorage not available, trying sessionStorage:', e);
-      try {
-        sessionStorage.removeItem(key);
-      } catch (e2) {
-        console.warn('AuthService: sessionStorage also not available:', e2);
-      }
+      console.warn('AuthService: localStorage not available:', e);
     }
+    
+    try {
+      sessionStorage.removeItem(key);
+    } catch (e) {
+      console.warn('AuthService: sessionStorage not available:', e);
+    }
+    
+    // Remove from memory storage
+    delete this.memoryStorage[key];
   }
 
   login(username: string, password: string): Observable<any> {
@@ -105,8 +136,13 @@ export class AuthService {
   }
 
   getCurrentUser(): any {
-    const user = this.safeStorageGet('user');
-    return user ? JSON.parse(user) : null;
+    try {
+      const user = this.safeStorageGet('user');
+      return user ? JSON.parse(user) : null;
+    } catch (e) {
+      console.warn('AuthService: Error parsing user data:', e);
+      return null;
+    }
   }
 
   getToken(): string | null {

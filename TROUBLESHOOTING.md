@@ -151,6 +151,107 @@ npm run init-db
 
 ---
 
+## "Access to storage is not allowed" Error
+
+### Symptoms
+- Browser console shows: "Access to storage is not allowed from this context"
+- 403 Forbidden errors when accessing API endpoints
+- No data displayed from backend
+
+### Causes
+1. Browser security restrictions (file:// protocol, incognito mode)
+2. Strict Content Security Policy
+3. Browser privacy settings blocking localStorage/sessionStorage
+
+### Solutions
+
+#### 1. Clear Browser Cache and Reload
+```bash
+# In browser:
+1. Press Ctrl+Shift+Delete
+2. Clear "Cached images and files" and "Cookies and other site data"
+3. Hard reload: Ctrl+Shift+R
+```
+
+#### 2. Check Browser Settings
+- Disable "Block third-party cookies" if enabled
+- Ensure site data is allowed for localhost
+- Try a different browser (Chrome, Firefox, Edge)
+
+#### 3. Re-login to Get Fresh Token
+```bash
+1. Open browser DevTools (F12)
+2. Go to Application > Storage
+3. Click "Clear site data"
+4. Refresh page and login again
+```
+
+#### 4. Verify Backend JWT Secret
+The backend and any existing tokens must use the same JWT_SECRET.
+
+**Check backend/.env:**
+```bash
+JWT_SECRET=your-secret-key-here
+PORT=3000
+```
+
+**If .env doesn't exist, create it:**
+```bash
+cd backend
+echo "JWT_SECRET=cutecart-secret-2024" > .env
+echo "PORT=3000" >> .env
+```
+
+**Then restart backend:**
+```bash
+npm start
+```
+
+#### 5. Test Token Manually
+```powershell
+# Login and get token
+$response = Invoke-RestMethod -Uri "http://192.168.1.6:3000/api/auth/login" -Method POST -Body (@{username="admin"; password="admin123"} | ConvertTo-Json) -ContentType "application/json"
+$token = $response.token
+
+# Test with token
+$headers = @{Authorization = "Bearer $token"}
+Invoke-RestMethod -Uri "http://192.168.1.6:3000/api/invoices/stats/summary" -Headers $headers
+```
+
+### Quick Fix for 403 Errors
+
+1. **Logout completely:**
+   - Click logout button
+   - Clear browser storage (F12 > Application > Clear storage)
+
+2. **Login again:**
+   - Use valid credentials (default: admin/admin123)
+   - Check browser console for successful login
+   - Verify token is stored (F12 > Application > Local Storage)
+
+3. **Verify token is sent:**
+   - Open Network tab (F12)
+   - Make any API request
+   - Check request headers for "Authorization: Bearer <token>"
+
+### Error: "Invalid or expired token"
+
+**Cause:** Token was created with different JWT_SECRET or has expired (24h)
+
+**Solution:**
+1. Ensure backend/.env has JWT_SECRET set
+2. Restart backend server
+3. Clear all tokens and login again
+4. If problem persists, recreate database:
+   ```bash
+   cd backend
+   rm database.db
+   npm run init-db
+   node add-users.js
+   ```
+
+---
+
 ## Other Common Issues
 
 ### Products Not Loading

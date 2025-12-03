@@ -1,3 +1,139 @@
+/* Statistics Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  color: white;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.stat-warning {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 14px;
+  opacity: 1;
+  margin-bottom: 4px;
+   color: #a50d08;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Filters Section */
+.filters-section {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr auto auto;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.filter-input,
+.filter-select {
+  padding: 10px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.checkbox-group {
+  justify-content: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.filter-results {
+  font-size: 14px;
+  color: #6c757d;
+  padding: 8px 0;
+  border-top: 1px solid #dee2e6;
+}
+
+.filter-results strong {
+  color: #495057;
+  font-weight: 600;
+}
+
+.no-results {
+  text-align: center;
+  padding: 40px 20px !important;
+  color: #6c757d;
+  font-style: italic;
+}
+
 .header-actions {
   display: flex;
   gap: 10px;
@@ -66,7 +202,113 @@
   margin-right: 0;
 }
 
+/* Compact Product Modal */
+.modal .form-group {
+  margin-bottom: 12px;
+}
+
+.modal .form-label {
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.modal .form-control,
+.modal textarea.form-control {
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.modal textarea.form-control {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.modal .form-text,
+.modal .form-text-help {
+  font-size: 11px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+/* Category Input Wrapper */
+.category-input-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.category-input-wrapper .form-control {
+  flex: 1;
+}
+
+.form-text-help {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.delete-category-btn {
+  padding: 8px 12px;
+  font-size: 16px;
+  line-height: 1;
+  border: none;
+  background: #dc3545;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+.delete-category-btn:hover {
+  background: #c82333;
+  transform: scale(1.05);
+}
+
+.delete-category-btn:active {
+  transform: scale(0.95);
+}
+
+/* Form Helper Text */
+.form-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-icon {
+    font-size: 36px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .filter-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .filters-section {
+    padding: 16px;
+  }
+
   .header-actions {
     flex-wrap: wrap;
   }

@@ -1,4 +1,31 @@
 <div class="container">
+  <!-- Statistics Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📦</div>
+      <div class="stat-content">
+        <div class="stat-label">Total Products</div>
+        <div class="stat-value">{{ stats.totalProducts }}</div>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-content">
+        <div class="stat-label">Inventory Value</div>
+        <div class="stat-value">₹{{ stats.inventoryValue | number:'1.2-2' }}</div>
+      </div>
+    </div>
+    
+    <div class="stat-card stat-warning">
+      <div class="stat-icon">⚠️</div>
+      <div class="stat-content">
+        <div class="stat-label">Low Stock Items</div>
+        <div class="stat-value">{{ stats.lowStockCount }}</div>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-header">
       <h2 class="card-title">Products</h2>
@@ -27,6 +54,57 @@
       style="display: none;"
     />
 
+    <!-- Search and Filter Section -->
+    <div class="filters-section">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label class="filter-label">🔍 Search by ID or Name</label>
+          <input 
+            type="text" 
+            class="filter-input" 
+            [(ngModel)]="searchTerm" 
+            (ngModelChange)="onSearchChange()"
+            placeholder="Enter product ID or name..."
+          />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">📂 Category</label>
+          <select 
+            class="filter-select" 
+            [(ngModel)]="selectedCategory" 
+            (ngModelChange)="onCategoryChange()"
+          >
+            <option value="">All Categories</option>
+            <option *ngFor="let category of stats.categories" [value]="category">
+              {{ category }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-group checkbox-group">
+          <label class="checkbox-label">
+            <input 
+              type="checkbox" 
+              [(ngModel)]="showLowStockOnly" 
+              (ngModelChange)="onLowStockToggle()"
+            />
+            <span>⚠️ Low Stock Only (< {{ lowStockThreshold }})</span>
+          </label>
+        </div>
+
+        <div class="filter-group">
+          <button (click)="clearFilters()" class="btn btn-secondary btn-sm">
+            🔄 Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-results">
+        Showing <strong>{{ filteredProducts.length }}</strong> of <strong>{{ products.length }}</strong> products
+      </div>
+    </div>
+
     <div class="table-container">
       <table>
         <thead>
@@ -40,12 +118,12 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let product of products">
+          <tr *ngFor="let product of filteredProducts">
             <td>{{ product.id }}</td>
             <td>{{ product.name }}</td>
             <td>₹{{ product.price | number:'1.2-2' }}</td>
             <td>
-              <span [class.stock-badge]="true" [class.stock-low]="(product.stock || 0) < 10">
+              <span [class.stock-badge]="true" [class.stock-low]="(product.stock || 0) < lowStockThreshold">
                 {{ product.stock || 0 }}
               </span>
             </td>
@@ -53,6 +131,11 @@
             <td>
               <button (click)="openEditModal(product)" class="btn btn-sm btn-warning action-btn">Edit</button>
               <button (click)="deleteProduct(product)" class="btn btn-sm btn-danger action-btn">Delete</button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredProducts.length === 0">
+            <td colspan="6" class="no-results">
+              No products found matching your criteria
             </td>
           </tr>
         </tbody>
@@ -85,13 +168,25 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label">Price *</label>
-      <input type="number" class="form-control" [(ngModel)]="currentProduct.price" required />
+      <label class="form-label">Purchase Price *</label>
+      <input 
+        type="number" 
+        class="form-control" 
+        [(ngModel)]="currentProduct.purchase_price" 
+        (ngModelChange)="onPurchasePriceChange()"
+        required 
+      />
     </div>
 
     <div class="form-group">
-      <label class="form-label">Purchase Price</label>
-      <input type="number" class="form-control" [(ngModel)]="currentProduct.purchase_price" />
+      <label class="form-label">Selling Price (Auto-calculated with 40% margin)</label>
+      <input 
+        type="number" 
+        class="form-control" 
+        [(ngModel)]="currentProduct.price" 
+        required 
+      />
+      <small class="form-text">Price is auto-calculated from purchase price. You can adjust it manually.</small>
     </div>
 
     <div class="form-group">
@@ -100,13 +195,30 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label">Barcode</label>
-      <input type="text" class="form-control" [(ngModel)]="currentProduct.barcode" />
-    </div>
-
-    <div class="form-group">
       <label class="form-label">Category</label>
-      <input type="text" class="form-control" [(ngModel)]="currentProduct.category" />
+      <small class="form-text-help">Type a new category or select from existing ones</small>
+      
+      <div class="category-input-wrapper">
+        <input 
+          type="text" 
+          class="form-control" 
+          [(ngModel)]="currentProduct.category"
+          list="categoryList"
+          placeholder="Type or select category"
+        />
+        <datalist id="categoryList">
+          <option *ngFor="let cat of stats.categories" [value]="cat">{{ cat }}</option>
+        </datalist>
+        <button 
+          type="button" 
+          class="btn btn-sm btn-danger delete-category-btn" 
+          *ngIf="currentProduct.category && stats.categories.includes(currentProduct.category)"
+          (click)="deleteCategory(currentProduct.category)"
+          title="Delete this category"
+        >
+          🗑️
+        </button>
+      </div>
     </div>
 
     <div class="modal-footer">

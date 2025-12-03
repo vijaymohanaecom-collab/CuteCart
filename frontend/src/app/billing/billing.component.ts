@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../services/api.service';
+import { SettingsService } from '../services/settings.service';
 import { Product } from '../models/product.model';
 import { Invoice, InvoiceItem } from '../models/invoice.model';
 import { Settings } from '../models/settings.model';
@@ -26,6 +27,10 @@ export class BillingComponent implements OnInit {
   paymentMethod = 'cash';
   notes = '';
   
+  // Customer auto-complete
+  customers: {customer_name: string, customer_phone: string}[] = [];
+  filteredCustomers: {customer_name: string, customer_phone: string}[] = [];
+  
   settings: Settings | null = null;
   subtotal = 0;
   taxRate = 0;
@@ -41,12 +46,23 @@ export class BillingComponent implements OnInit {
   constructor(
     private apiService: ApiService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private settingsService: SettingsService
   ) {}
 
   ngOnInit(): void {
     this.loadProducts();
     this.loadSettings();
+    this.loadCustomers();
+    
+    // Subscribe to settings changes
+    this.settingsService.settings$.subscribe(settings => {
+      if (settings) {
+        this.settings = settings;
+        this.taxRate = settings.tax_rate !== undefined ? settings.tax_rate : 0;
+        this.calculateTotals();
+      }
+    });
   }
 
   loadProducts(): void {
@@ -61,15 +77,50 @@ export class BillingComponent implements OnInit {
   }
 
   loadSettings(): void {
-    this.apiService.getSettings().subscribe({
-      next: (settings) => {
-        this.settings = settings;
-        this.taxRate = settings.tax_rate !== undefined ? settings.tax_rate : 0;
-        this.calculateTotals();
-        this.cdr.detectChanges();
+    // Get initial settings from service
+    const currentSettings = this.settingsService.getSettings();
+    this.settings = currentSettings;
+    this.taxRate = currentSettings.tax_rate !== undefined ? currentSettings.tax_rate : 0;
+    this.calculateTotals();
+  }
+
+  loadCustomers(): void {
+    this.apiService.getCustomers().subscribe({
+      next: (customers) => {
+        this.customers = customers;
       },
-      error: (err) => console.error('Error loading settings:', err)
+      error: (err) => console.error('Error loading customers:', err)
     });
+  }
+
+  onCustomerNameChange(): void {
+    if (!this.customerName) {
+      this.filteredCustomers = [];
+      return;
+    }
+    
+    const searchTerm = this.customerName.toLowerCase();
+    this.filteredCustomers = this.customers.filter(c => 
+      c.customer_name.toLowerCase().includes(searchTerm)
+    ).slice(0, 5); // Limit to 5 suggestions
+  }
+
+  onCustomerPhoneChange(): void {
+    if (!this.customerPhone) {
+      this.filteredCustomers = [];
+      return;
+    }
+    
+    const searchTerm = this.customerPhone;
+    this.filteredCustomers = this.customers.filter(c => 
+      c.customer_phone && c.customer_phone.includes(searchTerm)
+    ).slice(0, 5); // Limit to 5 suggestions
+  }
+
+  selectCustomer(customer: {customer_name: string, customer_phone: string}): void {
+    this.customerName = customer.customer_name;
+    this.customerPhone = customer.customer_phone || '';
+    this.filteredCustomers = [];
   }
 
   searchProducts(): void {
@@ -136,8 +187,9 @@ export class BillingComponent implements OnInit {
       return;
     }
     
-    // Generate invoice number
-    this.invoiceNumber = 'INV-' + Date.now();
+    // Generate invoice number using settings prefix
+    const prefix = this.settings?.invoice_prefix || 'INV';
+    this.invoiceNumber = prefix + '-' + Date.now();
     this.currentDate = new Date();
     this.showInvoicePreview = true;
   }

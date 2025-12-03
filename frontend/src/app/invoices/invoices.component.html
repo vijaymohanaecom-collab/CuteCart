@@ -1,7 +1,89 @@
 <div class="container">
+  <!-- Statistics Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-content">
+        <div class="stat-label">Total Sales</div>
+        <div class="stat-value">₹{{ stats.totalSales | number:'1.2-2' }}</div>
+      </div>
+    </div>
+    
+    <div class="stat-card stat-success" *ngIf="isManager">
+      <div class="stat-icon">📈</div>
+      <div class="stat-content">
+        <div class="stat-label">Total Profit</div>
+        <div class="stat-value">₹{{ stats.totalProfit | number:'1.2-2' }}</div>
+      </div>
+    </div>
+    
+    <div class="stat-card stat-info">
+      <div class="stat-icon">🧾</div>
+      <div class="stat-content">
+        <div class="stat-label">Total Invoices</div>
+        <div class="stat-value">{{ stats.totalInvoices }}</div>
+      </div>
+    </div>
+    
+    <div class="stat-card stat-purple">
+      <div class="stat-icon">📊</div>
+      <div class="stat-content">
+        <div class="stat-label">Avg Order Value</div>
+        <div class="stat-value">₹{{ stats.averageOrderValue | number:'1.2-2' }}</div>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-header">
-      <h2 class="card-title">Invoices</h2>
+      <h2 class="card-title">Sales / Invoices</h2>
+    </div>
+
+    <!-- Date Filter Section -->
+    <div class="filters-section">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label class="filter-label">📅 Date Range</label>
+          <select 
+            class="filter-select" 
+            [(ngModel)]="dateFilter" 
+            (ngModelChange)="onDateFilterChange()"
+          >
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="this_week">This Week</option>
+            <option value="last_week">Last Week</option>
+            <option value="this_month">This Month</option>
+            <option value="last_month">Last Month</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+
+        <div class="filter-group" *ngIf="dateFilter === 'custom'">
+          <label class="filter-label">From Date</label>
+          <input 
+            type="date" 
+            class="filter-input" 
+            [(ngModel)]="customStartDate" 
+            (ngModelChange)="onCustomDateChange()"
+          />
+        </div>
+
+        <div class="filter-group" *ngIf="dateFilter === 'custom'">
+          <label class="filter-label">To Date</label>
+          <input 
+            type="date" 
+            class="filter-input" 
+            [(ngModel)]="customEndDate" 
+            (ngModelChange)="onCustomDateChange()"
+          />
+        </div>
+      </div>
+
+      <div class="filter-results">
+        Showing <strong>{{ filteredInvoices.length }}</strong> of <strong>{{ invoices.length }}</strong> invoices
+      </div>
     </div>
 
     <div class="table-container">
@@ -17,7 +99,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let invoice of invoices">
+          <tr *ngFor="let invoice of filteredInvoices">
             <td>{{ invoice.invoice_number }}</td>
             <td>{{ invoice.customer_name || 'Walk-in' }}</td>
             <td>{{ invoice.created_at | date:'short' }}</td>
@@ -27,6 +109,11 @@
               <button (click)="viewInvoice(invoice)" class="btn btn-sm btn-primary action-btn">View</button>
               <button (click)="openEditModal(invoice)" class="btn btn-sm btn-warning action-btn" *ngIf="isManager">Edit</button>
               <button (click)="deleteInvoice(invoice)" class="btn btn-sm btn-danger action-btn" *ngIf="isManager">Delete</button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredInvoices.length === 0">
+            <td colspan="6" class="no-results">
+              No invoices found for the selected date range
             </td>
           </tr>
         </tbody>

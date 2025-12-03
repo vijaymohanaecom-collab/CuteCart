@@ -2,6 +2,21 @@ const express = require('express');
 const router = express.Router();
 const { dbRun, dbGet, dbAll } = require('../config/database');
 
+// Get unique customers
+router.get('/customers/list', async (req, res) => {
+  try {
+    const customers = await dbAll(`
+      SELECT DISTINCT customer_name, customer_phone 
+      FROM invoices 
+      WHERE customer_name IS NOT NULL AND customer_name != '' 
+      ORDER BY customer_name
+    `);
+    res.json(customers);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get all invoices
 router.get('/', async (req, res) => {
   try {

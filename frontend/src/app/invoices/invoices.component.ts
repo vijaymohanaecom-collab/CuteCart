@@ -15,10 +15,24 @@ import { Invoice } from '../models/invoice.model';
 })
 export class InvoicesComponent implements OnInit {
   invoices: Invoice[] = [];
+  filteredInvoices: Invoice[] = [];
   selectedInvoice: Invoice | null = null;
   showModal = false;
   showEditModal = false;
   editInvoice: Invoice | null = null;
+
+  // Date filter properties
+  dateFilter: 'today' | 'yesterday' | 'this_week' | 'last_week' | 'this_month' | 'last_month' | 'custom' | 'all' = 'all';
+  customStartDate: string = '';
+  customEndDate: string = '';
+
+  // Statistics
+  stats = {
+    totalSales: 0,
+    totalProfit: 0,
+    totalInvoices: 0,
+    averageOrderValue: 0
+  };
 
   constructor(
     private apiService: ApiService,
@@ -29,22 +43,161 @@ export class InvoicesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadInvoices();
+    this.setDefaultCustomDates();
   }
 
   get isManager(): boolean {
     return this.authService.isManager();
   }
 
+  setDefaultCustomDates(): void {
+    const today = new Date();
+    const lastMonth = new Date(today);
+    lastMonth.setMonth(today.getMonth() - 1);
+    
+    this.customEndDate = this.formatDateForInput(today);
+    this.customStartDate = this.formatDateForInput(lastMonth);
+  }
+
+  formatDateForInput(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   loadInvoices(): void {
     this.apiService.getInvoices().subscribe({
       next: (invoices) => {
         this.invoices = invoices;
+        this.applyDateFilter();
         this.cdr.detectChanges();
       },
       error: () => {
         // Handle error silently
       }
     });
+  }
+
+  applyDateFilter(): void {
+    const now = new Date();
+    let filtered = [...this.invoices];
+
+    if (this.dateFilter === 'all') {
+      this.filteredInvoices = filtered;
+    } else if (this.dateFilter === 'custom') {
+      if (this.customStartDate && this.customEndDate) {
+        const startDate = new Date(this.customStartDate);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(this.customEndDate);
+        endDate.setHours(23, 59, 59, 999);
+
+        filtered = filtered.filter(invoice => {
+          const invoiceDate = new Date(invoice.created_at!);
+          return invoiceDate >= startDate && invoiceDate <= endDate;
+        });
+      }
+      this.filteredInvoices = filtered;
+    } else {
+      const { startDate, endDate } = this.getDateRange(this.dateFilter);
+      filtered = filtered.filter(invoice => {
+        const invoiceDate = new Date(invoice.created_at!);
+        return invoiceDate >= startDate && invoiceDate <= endDate;
+      });
+      this.filteredInvoices = filtered;
+    }
+
+    this.calculateStatistics();
+  }
+
+  getDateRange(filter: string): { startDate: Date; endDate: Date } {
+    const now = new Date();
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
+
+    switch (filter) {
+      case 'today':
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      
+      case 'yesterday':
+        startDate.setDate(now.getDate() - 1);
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setDate(now.getDate() - 1);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      
+      case 'this_week':
+        const dayOfWeek = now.getDay();
+        const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday as first day
+        startDate.setDate(now.getDate() - diff);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      
+      case 'last_week':
+        const lastWeekStart = new Date(now);
+        const lastWeekDayOfWeek = now.getDay();
+        const lastWeekDiff = lastWeekDayOfWeek === 0 ? 6 : lastWeekDayOfWeek - 1;
+        lastWeekStart.setDate(now.getDate() - lastWeekDiff - 7);
+        lastWeekStart.setHours(0, 0, 0, 0);
+        
+        const lastWeekEnd = new Date(lastWeekStart);
+        lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+        lastWeekEnd.setHours(23, 59, 59, 999);
+        
+        return { startDate: lastWeekStart, endDate: lastWeekEnd };
+      
+      case 'this_month':
+        startDate.setDate(1);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      
+      case 'last_month':
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        lastMonthStart.setHours(0, 0, 0, 0);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+        lastMonthEnd.setHours(23, 59, 59, 999);
+        return { startDate: lastMonthStart, endDate: lastMonthEnd };
+    }
+
+    return { startDate, endDate };
+  }
+
+  calculateStatistics(): void {
+    this.stats.totalInvoices = this.filteredInvoices.length;
+    
+    // Calculate total sales
+    this.stats.totalSales = this.filteredInvoices.reduce((sum, invoice) => {
+      return sum + (invoice.total || 0);
+    }, 0);
+
+    // Calculate total profit (only if user is manager and purchase_price is available)
+    this.stats.totalProfit = 0;
+    if (this.isManager) {
+      this.filteredInvoices.forEach(invoice => {
+        invoice.items.forEach(item => {
+          const purchasePrice = item.purchase_price || 0;
+          const profit = (item.unit_price - purchasePrice) * item.quantity;
+          this.stats.totalProfit += profit;
+        });
+      });
+    }
+
+    // Calculate average order value
+    this.stats.averageOrderValue = this.stats.totalInvoices > 0 
+      ? this.stats.totalSales / this.stats.totalInvoices 
+      : 0;
+  }
+
+  onDateFilterChange(): void {
+    this.applyDateFilter();
+  }
+
+  onCustomDateChange(): void {
+    if (this.dateFilter === 'custom') {
+      this.applyDateFilter();
+    }
   }
 
   viewInvoice(invoice: Invoice): void {

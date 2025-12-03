@@ -200,6 +200,7 @@
 
 .customer-info-top .form-group {
   margin-bottom: 10px;
+  position: relative;
 }
 
 .customer-info-top .form-group:last-child {
@@ -211,7 +212,7 @@
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 14px;
   background: #fafafa;
 }
 
@@ -219,6 +220,53 @@
   outline: none;
   border-color: #4a90e2;
   background: white;
+}
+
+/* Customer Autocomplete */
+.customer-autocomplete {
+  position: relative;
+}
+
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.autocomplete-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s;
+}
+
+.autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-item:hover {
+  background: #f8f9fa;
+}
+
+.autocomplete-item .customer-name {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.autocomplete-item .customer-phone {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
 }
 
 /* Cart Items Table */

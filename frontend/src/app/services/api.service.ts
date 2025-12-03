@@ -71,6 +71,10 @@ export class ApiService {
     return this.http.get(`${this.apiUrl}/invoices/stats/summary`);
   }
 
+  getCustomers(): Observable<{customer_name: string, customer_phone: string}[]> {
+    return this.http.get<{customer_name: string, customer_phone: string}[]>(`${this.apiUrl}/invoices/customers/list`);
+  }
+
   // Users
   getUsers(): Observable<User[]> {
     return this.http.get<User[]>(`${this.apiUrl}/users`);

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear CuteCart Storage</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+        ul {
+            text-align: left;
+            margin: 15px 0;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear CuteCart Storage</h1>
+        <p>This tool will clear all stored authentication data for CuteCart.</p>
+        
+        <div id="status" class="status"></div>
+        
+        <h3>What will be cleared:</h3>
+        <ul>
+            <li>Authentication tokens</li>
+            <li>User session data</li>
+            <li>Cached credentials</li>
+            <li>All localStorage and sessionStorage for CuteCart</li>
+        </ul>
+        
+        <button onclick="clearStorage()">Clear Storage Now</button>
+        <button onclick="checkStorage()">Check Current Storage</button>
+        <button onclick="redirectToApp()">Go to CuteCart</button>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+            <h3>After Clearing:</h3>
+            <ol>
+                <li>Click "Go to CuteCart" button above</li>
+                <li>Login with: <span class="code">admin</span> / <span class="code">admin123</span></li>
+                <li>Check that data loads correctly</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const APP_URL = 'http://192.168.1.6:4200';
+        const STORAGE_KEYS = ['token', 'user'];
+        
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+        
+        function clearStorage() {
+            try {
+                let cleared = [];
+                
+                // Clear localStorage
+                STORAGE_KEYS.forEach(key => {
+                    if (localStorage.getItem(key)) {
+                        localStorage.removeItem(key);
+                        cleared.push(`localStorage.${key}`);
+                    }
+                });
+                
+                // Clear sessionStorage
+                STORAGE_KEYS.forEach(key => {
+                    if (sessionStorage.getItem(key)) {
+                        sessionStorage.removeItem(key);
+                        cleared.push(`sessionStorage.${key}`);
+                    }
+                });
+                
+                // Clear all CuteCart related items
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.includes('cute') || key.includes('cart') || key.includes('auth'))) {
+                        localStorage.removeItem(key);
+                        cleared.push(`localStorage.${key}`);
+                    }
+                }
+                
+                if (cleared.length > 0) {
+                    showStatus(`✓ Successfully cleared: ${cleared.join(', ')}<br><br>You can now login again with fresh credentials.`, 'success');
+                } else {
+                    showStatus('ℹ No CuteCart data found in storage. Storage is already clean.', 'info');
+                }
+            } catch (error) {
+                showStatus(`✗ Error clearing storage: ${error.message}<br><br>Try manually clearing browser data (Ctrl+Shift+Delete)`, 'error');
+            }
+        }
+        
+        function checkStorage() {
+            try {
+                let found = [];
+                
+                STORAGE_KEYS.forEach(key => {
+                    const localValue = localStorage.getItem(key);
+                    const sessionValue = sessionStorage.getItem(key);
+                    
+                    if (localValue) {
+                        const preview = localValue.length > 50 ? localValue.substring(0, 50) + '...' : localValue;
+                        found.push(`localStorage.${key}: ${preview}`);
+                    }
+                    if (sessionValue) {
+                        const preview = sessionValue.length > 50 ? sessionValue.substring(0, 50) + '...' : sessionValue;
+                        found.push(`sessionStorage.${key}: ${preview}`);
+                    }
+                });
+                
+                if (found.length > 0) {
+                    showStatus(`Found stored data:<br><br>${found.map(f => `• ${f}`).join('<br>')}`, 'info');
+                } else {
+                    showStatus('✓ No CuteCart data found in storage.', 'success');
+                }
+            } catch (error) {
+                showStatus(`✗ Error checking storage: ${error.message}`, 'error');
+            }
+        }
+        
+        function redirectToApp() {
+            window.location.href = APP_URL;
+        }
+        
+        // Auto-check on load
+        window.addEventListener('load', () => {
+            checkStorage();
+        });
+    </script>
+</body>
+</html>

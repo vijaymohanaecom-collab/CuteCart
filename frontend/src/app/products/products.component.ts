@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
+import { SettingsService } from '../services/settings.service';
 import { Product } from '../models/product.model';
 
 @Component({
@@ -13,16 +14,49 @@ import { Product } from '../models/product.model';
 })
 export class ProductsComponent implements OnInit {
   products: Product[] = [];
+  filteredProducts: Product[] = [];
   showModal = false;
   editMode = false;
   currentProduct: Product = this.getEmptyProduct();
+  
+  // Search and filter properties
+  searchTerm = '';
+  selectedCategory = '';
+  showLowStockOnly = false;
+  lowStockThreshold = 10; // Will be updated from settings
+  
+  // Category management (simplified)
+  
+  // Statistics
+  stats = {
+    totalProducts: 0,
+    inventoryValue: 0,
+    lowStockCount: 0,
+    categories: [] as string[]
+  };
 
   constructor(
     private apiService: ApiService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private settingsService: SettingsService
   ) {}
 
   ngOnInit(): void {
+    // Load low stock threshold from settings
+    this.lowStockThreshold = this.settingsService.getLowStockThreshold();
+    
+    // Subscribe to settings changes
+    this.settingsService.settings$.subscribe(settings => {
+      if (settings) {
+        this.lowStockThreshold = settings.low_stock_threshold || 10;
+        // Recalculate statistics when settings change
+        if (this.products.length > 0) {
+          this.calculateStatistics();
+          this.applyFilters();
+        }
+      }
+    });
+    
     this.loadProducts();
   }
 
@@ -30,10 +64,79 @@ export class ProductsComponent implements OnInit {
     this.apiService.getProducts().subscribe({
       next: (products) => {
         this.products = products;
+        this.calculateStatistics();
+        this.applyFilters();
         this.cdr.detectChanges();
       },
       error: () => {}
     });
+  }
+
+  calculateStatistics(): void {
+    this.stats.totalProducts = this.products.length;
+    
+    // Calculate inventory value (price * stock)
+    this.stats.inventoryValue = this.products.reduce((sum, product) => {
+      return sum + (product.price * (product.stock || 0));
+    }, 0);
+    
+    // Count low stock items
+    this.stats.lowStockCount = this.products.filter(p => 
+      (p.stock || 0) < this.lowStockThreshold
+    ).length;
+    
+    // Get unique categories
+    const categorySet = new Set<string>();
+    this.products.forEach(p => {
+      if (p.category && p.category.trim()) {
+        categorySet.add(p.category.trim());
+      }
+    });
+    this.stats.categories = Array.from(categorySet).sort();
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.products];
+    
+    // Search by ID or Name
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(term) ||
+        (p.id?.toString().toLowerCase().includes(term))
+      );
+    }
+    
+    // Filter by category
+    if (this.selectedCategory) {
+      filtered = filtered.filter(p => p.category === this.selectedCategory);
+    }
+    
+    // Filter low stock items
+    if (this.showLowStockOnly) {
+      filtered = filtered.filter(p => (p.stock || 0) < this.lowStockThreshold);
+    }
+    
+    this.filteredProducts = filtered;
+  }
+
+  onSearchChange(): void {
+    this.applyFilters();
+  }
+
+  onCategoryChange(): void {
+    this.applyFilters();
+  }
+
+  onLowStockToggle(): void {
+    this.applyFilters();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.selectedCategory = '';
+    this.showLowStockOnly = false;
+    this.applyFilters();
   }
 
   getEmptyProduct(): Product {
@@ -63,6 +166,45 @@ export class ProductsComponent implements OnInit {
   closeModal(): void {
     this.showModal = false;
     this.currentProduct = this.getEmptyProduct();
+  }
+
+  onPurchasePriceChange(): void {
+    // Auto-calculate selling price with 40% margin
+    if (this.currentProduct.purchase_price && this.currentProduct.purchase_price > 0) {
+      this.currentProduct.price = this.currentProduct.purchase_price * 1.4;
+    }
+  }
+
+  deleteCategory(categoryName: string): void {
+    if (!categoryName) return;
+    
+    const productsWithCategory = this.products.filter(p => p.category === categoryName);
+    
+    if (productsWithCategory.length > 0) {
+      const confirmMsg = `This category is used by ${productsWithCategory.length} product(s). Deleting it will remove the category from all these products. Continue?`;
+      if (!confirm(confirmMsg)) {
+        return;
+      }
+    } else {
+      if (!confirm(`Delete category "${categoryName}"?`)) {
+        return;
+      }
+    }
+    
+    // Update all products with this category to have no category
+    const updatePromises = productsWithCategory.map(product => {
+      const updatedProduct = { ...product, category: '' };
+      return this.apiService.updateProduct(product.id!, updatedProduct).toPromise();
+    });
+    
+    Promise.all(updatePromises).then(() => {
+      this.currentProduct.category = '';
+      this.loadProducts();
+      alert(`Category "${categoryName}" deleted successfully.`);
+    }).catch(err => {
+      console.error('Error deleting category:', err);
+      alert('Failed to delete category. Please try again.');
+    });
   }
 
   saveProduct(): void {

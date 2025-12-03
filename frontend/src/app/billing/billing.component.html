@@ -68,11 +68,43 @@
     <div class="cart-content">
       <!-- Customer Info at Top -->
       <div class="customer-info-top">
-        <div class="form-group">
-          <input type="text" placeholder="Customer Name (Optional)" [(ngModel)]="customerName" />
+        <div class="form-group customer-autocomplete">
+          <input 
+            type="text" 
+            placeholder="Customer Name (Optional)" 
+            [(ngModel)]="customerName"
+            (ngModelChange)="onCustomerNameChange()"
+            autocomplete="off"
+          />
+          <div class="autocomplete-dropdown" *ngIf="filteredCustomers.length > 0">
+            <div 
+              class="autocomplete-item" 
+              *ngFor="let customer of filteredCustomers"
+              (click)="selectCustomer(customer)"
+            >
+              <div class="customer-name">{{ customer.customer_name }}</div>
+              <div class="customer-phone" *ngIf="customer.customer_phone">{{ customer.customer_phone }}</div>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <input type="text" placeholder="Phone (Optional)" [(ngModel)]="customerPhone" />
+        <div class="form-group customer-autocomplete">
+          <input 
+            type="text" 
+            placeholder="Phone (Optional)" 
+            [(ngModel)]="customerPhone"
+            (ngModelChange)="onCustomerPhoneChange()"
+            autocomplete="off"
+          />
+          <div class="autocomplete-dropdown" *ngIf="filteredCustomers.length > 0 && customerPhone">
+            <div 
+              class="autocomplete-item" 
+              *ngFor="let customer of filteredCustomers"
+              (click)="selectCustomer(customer)"
+            >
+              <div class="customer-name">{{ customer.customer_name }}</div>
+              <div class="customer-phone" *ngIf="customer.customer_phone">{{ customer.customer_phone }}</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -147,7 +179,6 @@
         <label class="payment-label">Payment Method:</label>
         <select class="payment-select" [(ngModel)]="paymentMethod">
           <option value="cash">Cash</option>
-          <option value="card">Card</option>
           <option value="upi">UPI</option>
         </select>
       </div>
@@ -180,18 +211,17 @@
 
     <div class="invoice-content">
       <div class="invoice-company-header">
-        <h1>CuteCart</h1>
-        <p>No. 4/204, Opp: NRS Complex (Apollo Pharmacy), Nookampalayam Road</p>
-        <p>Perumbakkam Chennai - 600100</p>
-        <p>Phone: 9003498836</p>
-        <p>Email: vijaymahasecom@gmail.com</p>
-        <p>Website: www.cutecart.in</p>
+        <h1>{{ settings?.store_name || 'CuteCart' }}</h1>
+        <p *ngIf="settings && settings.store_address">{{ settings.store_address }}</p>
+        <p *ngIf="settings && settings.store_phone">Phone: {{ settings.store_phone }}</p>
+        <p *ngIf="settings && settings.store_email">Email: {{ settings.store_email }}</p>
+        <p *ngIf="settings && settings.store_website">Website: {{ settings.store_website }}</p>
       </div>
 
       <div class="invoice-title-section">
         <h2>INVOICE</h2>
         <div class="invoice-meta">
-          <p><strong>Invoice #:</strong> {{ invoiceNumber }}</p>
+          <p><strong>Invoice #:</strong> PREVIEW</p>
           <p><strong>Date:</strong> {{ currentDate | date:'d MMMM yyyy \'at\' hh:mm a' }}</p>
         </div>
       </div>
@@ -244,6 +274,10 @@
 
       <div class="invoice-payment-info">
         <p><strong>Payment Method:</strong> {{ paymentMethod | titlecase }}</p>
+      </div>
+
+      <div class="invoice-footer" *ngIf="settings && settings.invoice_footer">
+        <p>{{ settings.invoice_footer }}</p>
       </div>
     </div>
   </div>

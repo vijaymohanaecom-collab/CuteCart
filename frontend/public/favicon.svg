@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#FF0000"/>
+  
+  <!-- Race car body - simplified McQueen style -->
+  <g transform="translate(50, 50)">
+    <!-- Main car body -->
+    <ellipse cx="0" cy="5" rx="28" ry="14" fill="#E60000"/>
+    
+    <!-- Car cabin/roof -->
+    <path d="M -15 0 Q -15 -12 0 -12 Q 15 -12 15 0 Z" fill="#C00000"/>
+    
+    <!-- Windshield -->
+    <path d="M -10 -3 Q -10 -8 0 -8 Q 10 -8 10 -3 Z" fill="#87CEEB" opacity="0.8"/>
+    
+    <!-- Front wheel -->
+    <circle cx="-14" cy="15" r="7" fill="#1a1a1a"/>
+    <circle cx="-14" cy="15" r="4" fill="#404040"/>
+    
+    <!-- Back wheel -->
+    <circle cx="14" cy="15" r="7" fill="#1a1a1a"/>
+    <circle cx="14" cy="15" r="4" fill="#404040"/>
+    
+    <!-- Lightning bolt - McQueen's signature -->
+    <path d="M -2 -20 L -4 -14 L -1 -14 L -3 -8 L 2 -15 L -1 -15 Z" fill="#FFD700" stroke="#FFA500" stroke-width="0.8"/>
+    
+    <!-- Headlight -->
+    <circle cx="24" cy="3" r="2.5" fill="#FFFF99"/>
+    
+    <!-- Spoiler -->
+    <rect x="-28" y="3" width="7" height="4" fill="#A00000" rx="1"/>
+    
+    <!-- Number 95 (McQueen's number) -->
+    <text x="0" y="8" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white" text-anchor="middle">95</text>
+  </g>
+</svg>
