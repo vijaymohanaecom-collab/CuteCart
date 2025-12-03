@@ -39,38 +39,51 @@ export class AuthService {
     }
   }
 
-  private safeLocalStorageGet(key: string): string | null {
-    if (!this.storageAvailable) return null;
+  private safeStorageGet(key: string): string | null {
     try {
       return localStorage.getItem(key);
     } catch (e) {
-      return null;
+      console.warn('AuthService: localStorage not available, trying sessionStorage:', e);
+      try {
+        return sessionStorage.getItem(key);
+      } catch (e2) {
+        console.warn('AuthService: sessionStorage also not available:', e2);
+        return null;
+      }
     }
   }
 
-  private safeLocalStorageSet(key: string, value: string): void {
-    if (!this.storageAvailable) return;
+  private safeStorageSet(key: string, value: string): void {
     try {
       localStorage.setItem(key, value);
     } catch (e) {
-      // Silent fail
+      console.warn('AuthService: localStorage not available, trying sessionStorage:', e);
+      try {
+        sessionStorage.setItem(key, value);
+      } catch (e2) {
+        console.warn('AuthService: sessionStorage also not available:', e2);
+      }
     }
   }
 
-  private safeLocalStorageRemove(key: string): void {
-    if (!this.storageAvailable) return;
+  private safeStorageRemove(key: string): void {
     try {
       localStorage.removeItem(key);
     } catch (e) {
-      // Silent fail
+      console.warn('AuthService: localStorage not available, trying sessionStorage:', e);
+      try {
+        sessionStorage.removeItem(key);
+      } catch (e2) {
+        console.warn('AuthService: sessionStorage also not available:', e2);
+      }
     }
   }
 
   login(username: string, password: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/auth/login`, { username, password }).pipe(
       tap((response: any) => {
-        this.safeLocalStorageSet('token', response.token);
-        this.safeLocalStorageSet('user', JSON.stringify(response.user));
+        this.safeStorageSet('token', response.token);
+        this.safeStorageSet('user', JSON.stringify(response.user));
         this.currentUserSubject.next(response.user);
         this.resetInactivityTimer();
       })
@@ -78,8 +91,8 @@ export class AuthService {
   }
 
   logout(): void {
-    this.safeLocalStorageRemove('token');
-    this.safeLocalStorageRemove('user');
+    this.safeStorageRemove('token');
+    this.safeStorageRemove('user');
     this.currentUserSubject.next(null);
     if (this.inactivityTimer) {
       clearTimeout(this.inactivityTimer);
@@ -88,16 +101,16 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return !!this.safeLocalStorageGet('token');
+    return !!this.safeStorageGet('token');
   }
 
   getCurrentUser(): any {
-    const user = this.safeLocalStorageGet('user');
+    const user = this.safeStorageGet('user');
     return user ? JSON.parse(user) : null;
   }
 
   getToken(): string | null {
-    return this.safeLocalStorageGet('token');
+    return this.safeStorageGet('token');
   }
 
   isAdmin(): boolean {

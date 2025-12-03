@@ -117,6 +117,47 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Delete invoice
+router.delete('/:id', async (req, res) => {
+  console.log(`DELETE /api/invoices/${req.params.id} called`);
+  try {
+    console.log('Getting invoice items to restore stock...');
+    // First, get all invoice items to restore stock
+    const invoiceItems = await dbAll('SELECT product_id, quantity FROM invoice_items WHERE invoice_id = ?', [req.params.id]);
+    console.log(`Found ${invoiceItems.length} invoice items to process`);
+
+    // Restore stock for each product
+    for (const item of invoiceItems) {
+      if (item.product_id) {
+        console.log(`Restoring ${item.quantity} units to product ${item.product_id}`);
+        await dbRun(
+          'UPDATE products SET stock = stock + ? WHERE id = ?',
+          [item.quantity, item.product_id]
+        );
+      }
+    }
+
+    console.log('Deleting invoice items...');
+    // Delete invoice items first (due to foreign key constraint)
+    await dbRun('DELETE FROM invoice_items WHERE invoice_id = ?', [req.params.id]);
+
+    console.log('Deleting invoice...');
+    // Delete the invoice
+    const result = await dbRun('DELETE FROM invoices WHERE id = ?', [req.params.id]);
+
+    if (result.changes === 0) {
+      console.log('Invoice not found');
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    console.log('Invoice deleted successfully');
+    res.json({ message: 'Invoice deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting invoice:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get invoice statistics
 router.get('/stats/summary', async (req, res) => {
   try {

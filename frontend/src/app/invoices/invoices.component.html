@@ -25,7 +25,8 @@
             <td>₹{{ invoice.total | number:'1.2-2' }}</td>
             <td>
               <button (click)="viewInvoice(invoice)" class="btn btn-sm btn-primary action-btn">View</button>
-              <button (click)="openEditModal(invoice)" class="btn btn-sm btn-warning action-btn">Edit</button>
+              <button (click)="openEditModal(invoice)" class="btn btn-sm btn-warning action-btn" *ngIf="isManager">Edit</button>
+              <button (click)="deleteInvoice(invoice)" class="btn btn-sm btn-danger action-btn" *ngIf="isManager">Delete</button>
             </td>
           </tr>
         </tbody>

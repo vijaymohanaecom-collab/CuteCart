@@ -4,6 +4,48 @@
   background: #f5f5f5;
 }
 
+/* Mobile Menu Toggle Button */
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1001;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  width: 50px;
+  height: 50px;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-toggle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+}
+
+.mobile-menu-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Mobile Overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  backdrop-filter: blur(2px);
+}
+
+/* Sidebar */
 .sidebar {
   width: 210px;
   background: linear-gradient(180deg, #3d4d6a 0%, #2c3e50 100%);
@@ -13,7 +55,9 @@
   top: 0;
   bottom: 0;
   overflow-y: auto;
-  z-index: 100;
+  z-index: 1000;
+  transform: translateX(0);
+  transition: transform 0.3s ease;
 }
 
 .sidebar-brand {
@@ -75,6 +119,8 @@
   width: calc(100% - 210px);
   background: #f5f5f5;
   padding: 20px;
+  min-height: 100vh;
+  transition: margin-left 0.3s ease, width 0.3s ease;
 }
 
 .nav-icon {
@@ -108,13 +154,68 @@
   transform: translateY(-2px);
 }
 
+/* Mobile Responsiveness */
 @media (max-width: 768px) {
-  .sidebar {
-    width: 200px;
+  /* Show mobile menu toggle */
+  .mobile-menu-toggle {
+    display: block;
   }
-  
+
+  /* Show overlay on mobile */
+  .sidebar-overlay {
+    display: block;
+  }
+
+  /* Hide sidebar by default on mobile */
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  /* Show sidebar when open on mobile */
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  /* Adjust main content for mobile */
   .main-content {
-    margin-left: 200px;
-    width: calc(100% - 200px);
+    margin-left: 0;
+    width: 100%;
+    padding: 15px;
+  }
+
+  .main-content.main-content-mobile {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* Make sidebar full width on very small screens */
+  @media (max-width: 480px) {
+    .sidebar {
+      width: 280px;
+    }
+
+    .mobile-menu-toggle {
+      width: 45px;
+      height: 45px;
+      font-size: 18px;
+    }
+  }
+}
+
+/* Touch-friendly improvements */
+@media (pointer: coarse) {
+  .sidebar-link {
+    padding: 16px 20px;
+    font-size: 16px;
+  }
+
+  .mobile-menu-toggle {
+    width: 55px;
+    height: 55px;
+  }
+
+  .logout-section .btn {
+    padding: 16px;
+    font-size: 16px;
   }
 }

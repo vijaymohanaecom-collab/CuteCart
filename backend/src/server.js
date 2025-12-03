@@ -8,8 +8,27 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+// Allow CORS for local and network access
 app.use(cors({
-  origin: ['http://localhost:4200', 'http://127.0.0.1:4200'],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+
+    // Allow localhost and any IP address on port 4200
+    const allowedOrigins = [
+      'http://localhost:4200',
+      'http://127.0.0.1:4200'
+    ];
+
+    // Allow any origin from local network (192.168.x.x or 10.x.x.x)
+    if (origin.match(/^http:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}):4200$/)) {
+      return callback(null, true);
+    }
+
+    // For debugging - allow all origins temporarily
+    console.log('CORS Origin:', origin);
+    callback(null, true); // Allow all origins for now
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

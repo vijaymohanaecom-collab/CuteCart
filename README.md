@@ -74,6 +74,8 @@ A full-stack Point of Sale (POS) system built with Angular and Node.js, designed
 
 ## 🔧 Installation
 
+### Quick Start (Local Development)
+
 ### 1. Clone the Repository
 
 ```bash
@@ -103,6 +105,21 @@ npm start
 ```
 
 The frontend will start on `http://localhost:4200`
+
+---
+
+### 🌐 LAN Deployment (Access from Mobile/Other Devices)
+
+To access CuteCart from mobile devices or other computers on your network:
+
+**Quick Setup:**
+```bash
+deploy-lan.bat
+```
+
+**See detailed guide:** [LAN_DEPLOYMENT_GUIDE.md](LAN_DEPLOYMENT_GUIDE.md)
+
+**Quick reference:** [QUICK_LAN_SETUP.md](QUICK_LAN_SETUP.md)
 
 ## 🔐 Default Credentials
 

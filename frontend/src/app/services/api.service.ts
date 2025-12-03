@@ -63,6 +63,10 @@ export class ApiService {
     return this.http.put<Invoice>(`${this.apiUrl}/invoices/${id}`, data);
   }
 
+  deleteInvoice(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/invoices/${id}`);
+  }
+
   getInvoiceStats(): Observable<any> {
     return this.http.get(`${this.apiUrl}/invoices/stats/summary`);
   }
