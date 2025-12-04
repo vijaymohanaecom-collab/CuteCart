@@ -38,12 +38,26 @@ app.use(express.json());
 // Initialize database
 initDatabase();
 
+// Initialize backup service and scheduler
+const backupService = require('./services/backup.service');
+const { scheduleBackups } = require('./jobs/backup.job');
+
+// Initialize Google Drive (if configured)
+backupService.initializeDrive().then(() => {
+  // Schedule automatic backups
+  scheduleBackups();
+});
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', authenticateToken, require('./routes/products'));
 app.use('/api/invoices', authenticateToken, require('./routes/invoices'));
 app.use('/api/users', authenticateToken, require('./routes/users'));
 app.use('/api/settings', authenticateToken, require('./routes/settings'));
+app.use('/api/expenses', authenticateToken, require('./routes/expenses'));
+app.use('/api/staff', authenticateToken, require('./routes/staff'));
+app.use('/api/attendance', authenticateToken, require('./routes/attendance'));
+app.use('/api/backup', authenticateToken, require('./routes/backup'));
 
 // Health check
 app.get('/api/health', (req, res) => {

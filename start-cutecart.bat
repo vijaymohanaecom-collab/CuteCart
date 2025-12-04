@@ -6,7 +6,7 @@ echo ========================================
 echo.
 start cmd /k "cd backend && npm start"
 timeout /t 3 /nobreak >nul
-start cmd /k "cd frontend && npm run start:network"
+start cmd /k "cd frontend && npm run start:prod"
 echo.
 echo ✓ Backend starting on port 3000
 echo ✓ Frontend starting on port 4200

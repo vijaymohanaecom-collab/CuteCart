@@ -1,7 +1,9 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-const dbPath = path.join(__dirname, '../../database.db');
+// Use environment-specific database
+const dbFileName = process.env.DB_PATH || 'database.db';
+const dbPath = path.join(__dirname, '../..', dbFileName);
 let db;
 
 function initDatabase() {

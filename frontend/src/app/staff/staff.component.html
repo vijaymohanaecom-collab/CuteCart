@@ -1,0 +1,494 @@
+<div class="container">
+  <!-- Tab Navigation -->
+  <div class="tabs">
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'staff'"
+      (click)="switchTab('staff')"
+    >
+      👥 Staff Management
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'attendance'"
+      (click)="switchTab('attendance')"
+    >
+      📋 Attendance Tracking
+    </button>
+  </div>
+
+  <!-- STAFF MANAGEMENT TAB -->
+  <div *ngIf="activeTab === 'staff'">
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-content">
+          <div class="stat-label">Active Staff</div>
+          <div class="stat-value">{{ staffStats.totalStaff }}</div>
+        </div>
+      </div>
+      
+      <div class="stat-card stat-success">
+        <div class="stat-icon">💰</div>
+        <div class="stat-content">
+          <div class="stat-label">Total Salary</div>
+          <div class="stat-value">₹{{ staffStats.totalSalary | number:'1.2-2' }}</div>
+        </div>
+      </div>
+      
+      <div class="stat-card stat-info" *ngIf="staffStats.byPosition.length > 0">
+        <div class="stat-icon">📊</div>
+        <div class="stat-content">
+          <div class="stat-label">Top Position</div>
+          <div class="stat-value">{{ staffStats.byPosition[0].position }}</div>
+          <small>{{ staffStats.byPosition[0].count }} members</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Staff Members</h2>
+        <button (click)="openAddStaffModal()" class="btn btn-primary" *ngIf="isManager">
+          ➕ Add Staff
+        </button>
+      </div>
+
+      <!-- Filter Section -->
+      <div class="filters-section">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label class="filter-label">Status Filter</label>
+            <select 
+              class="filter-select" 
+              [(ngModel)]="staffStatusFilter" 
+              (ngModelChange)="onStaffFilterChange()"
+            >
+              <option value="all">All Staff</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-results">
+          Showing <strong>{{ filteredStaff.length }}</strong> staff members
+        </div>
+      </div>
+
+      <!-- Staff Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Position</th>
+              <th>Salary</th>
+              <th>Joining Date</th>
+              <th>Status</th>
+              <th *ngIf="isManager">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let staff of filteredStaff">
+              <td>{{ staff.name }}</td>
+              <td>{{ staff.phone }}</td>
+              <td><span class="position-badge">{{ staff.position }}</span></td>
+              <td class="salary-cell">₹{{ staff.salary | number:'1.2-2' }}</td>
+              <td>{{ staff.joining_date | date:'dd MMM yyyy' }}</td>
+              <td>
+                <span class="status-badge" [class.status-active]="staff.status === 'active'" [class.status-inactive]="staff.status === 'inactive'">
+                  {{ staff.status | titlecase }}
+                </span>
+              </td>
+              <td *ngIf="isManager">
+                <button (click)="openEditStaffModal(staff)" class="btn btn-sm btn-warning action-btn">Edit</button>
+                <button (click)="deleteStaff(staff)" class="btn btn-sm btn-danger action-btn">Delete</button>
+              </td>
+            </tr>
+            <tr *ngIf="filteredStaff.length === 0">
+              <td [attr.colspan]="isManager ? 7 : 6" class="no-results">
+                No staff members found
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ATTENDANCE TRACKING TAB -->
+  <div *ngIf="activeTab === 'attendance'">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Attendance Records</h2>
+        <div class="header-actions">
+          <button (click)="openBulkAttendanceModal()" class="btn btn-success" *ngIf="isManager">
+            📝 Bulk Mark
+          </button>
+          <button (click)="openMarkAttendanceModal()" class="btn btn-primary" *ngIf="isManager">
+            ➕ Mark Attendance
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Section -->
+      <div class="filters-section">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label class="filter-label">📅 Date</label>
+            <input 
+              type="date" 
+              class="filter-input" 
+              [(ngModel)]="attendanceDateFilter" 
+              (ngModelChange)="onAttendanceFilterChange()"
+            />
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">👤 Staff Member</label>
+            <select 
+              class="filter-select" 
+              [(ngModel)]="attendanceStaffFilter" 
+              (ngModelChange)="onAttendanceFilterChange()"
+            >
+              <option [ngValue]="null">All Staff</option>
+              <option *ngFor="let staff of staffList" [ngValue]="staff.id">{{ staff.name }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-results">
+          Showing <strong>{{ attendanceRecords.length }}</strong> attendance records
+        </div>
+      </div>
+
+      <!-- Attendance Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Staff Name</th>
+              <th>Position</th>
+              <th>Check In</th>
+              <th>Check Out</th>
+              <th>Status</th>
+              <th *ngIf="isManager">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let record of attendanceRecords">
+              <td>{{ record.date | date:'dd MMM yyyy' }}</td>
+              <td>{{ record.staff_name }}</td>
+              <td>{{ record.staff_position }}</td>
+              <td>{{ record.check_in }}</td>
+              <td>{{ record.check_out || '-' }}</td>
+              <td>
+                <span class="attendance-badge" [style.background-color]="getStatusColor(record.status)">
+                  {{ getStatusLabel(record.status) }}
+                </span>
+              </td>
+              <td *ngIf="isManager">
+                <button (click)="openEditAttendanceModal(record)" class="btn btn-sm btn-warning action-btn">Edit</button>
+                <button (click)="deleteAttendance(record)" class="btn btn-sm btn-danger action-btn">Delete</button>
+              </td>
+            </tr>
+            <tr *ngIf="attendanceRecords.length === 0">
+              <td [attr.colspan]="isManager ? 7 : 6" class="no-results">
+                No attendance records found for the selected filters
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Staff Modal -->
+<div *ngIf="showAddStaffModal" class="modal-overlay" (click)="closeAddStaffModal()">
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Add New Staff Member</h3>
+      <button (click)="closeAddStaffModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Name *</label>
+          <input type="text" class="form-control" [(ngModel)]="newStaff.name" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Phone *</label>
+          <input type="tel" class="form-control" [(ngModel)]="newStaff.phone" required />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" [(ngModel)]="newStaff.email" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Position *</label>
+          <select class="form-control" [(ngModel)]="newStaff.position" required>
+            <option value="">Select Position</option>
+            <option *ngFor="let pos of positions" [value]="pos">{{ pos }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Salary (₹) *</label>
+          <input type="number" class="form-control" [(ngModel)]="newStaff.salary" min="0" step="100" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Joining Date *</label>
+          <input type="date" class="form-control" [(ngModel)]="newStaff.joining_date" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-control" [(ngModel)]="newStaff.status">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <textarea class="form-control" [(ngModel)]="newStaff.address" rows="2"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" [(ngModel)]="newStaff.notes" rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="saveStaff()" class="btn btn-primary">Save Staff</button>
+      <button (click)="closeAddStaffModal()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Staff Modal -->
+<div *ngIf="showEditStaffModal && editStaff" class="modal-overlay" (click)="closeEditStaffModal()">
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Staff Member</h3>
+      <button (click)="closeEditStaffModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Name *</label>
+          <input type="text" class="form-control" [(ngModel)]="editStaff.name" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Phone *</label>
+          <input type="tel" class="form-control" [(ngModel)]="editStaff.phone" required />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" [(ngModel)]="editStaff.email" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Position *</label>
+          <select class="form-control" [(ngModel)]="editStaff.position" required>
+            <option value="">Select Position</option>
+            <option *ngFor="let pos of positions" [value]="pos">{{ pos }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Salary (₹) *</label>
+          <input type="number" class="form-control" [(ngModel)]="editStaff.salary" min="0" step="100" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Joining Date *</label>
+          <input type="date" class="form-control" [(ngModel)]="editStaff.joining_date" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-control" [(ngModel)]="editStaff.status">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <textarea class="form-control" [(ngModel)]="editStaff.address" rows="2"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" [(ngModel)]="editStaff.notes" rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="updateStaffMember()" class="btn btn-primary">Update Staff</button>
+      <button (click)="closeEditStaffModal()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mark Attendance Modal -->
+<div *ngIf="showMarkAttendanceModal" class="modal-overlay" (click)="closeMarkAttendanceModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Mark Attendance</h3>
+      <button (click)="closeMarkAttendanceModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Staff Member *</label>
+        <select class="form-control" [(ngModel)]="newAttendance.staff_id" required>
+          <option [ngValue]="0">Select Staff</option>
+          <option *ngFor="let staff of staffList" [ngValue]="staff.id">{{ staff.name }} - {{ staff.position }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Date *</label>
+        <input type="date" class="form-control" [(ngModel)]="newAttendance.date" required />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Check In *</label>
+          <input type="time" class="form-control" [(ngModel)]="newAttendance.check_in" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Check Out</label>
+          <input type="time" class="form-control" [(ngModel)]="newAttendance.check_out" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-control" [(ngModel)]="newAttendance.status">
+          <option *ngFor="let status of attendanceStatuses" [value]="status.value">{{ status.label }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" [(ngModel)]="newAttendance.notes" rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="markAttendance()" class="btn btn-primary">Mark Attendance</button>
+      <button (click)="closeMarkAttendanceModal()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Attendance Modal -->
+<div *ngIf="showEditAttendanceModal && editAttendance" class="modal-overlay" (click)="closeEditAttendanceModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Attendance</h3>
+      <button (click)="closeEditAttendanceModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Staff: {{ editAttendance.staff_name }}</label>
+        <label class="form-label">Date: {{ editAttendance.date | date:'dd MMM yyyy' }}</label>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Check In *</label>
+          <input type="time" class="form-control" [(ngModel)]="editAttendance.check_in" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Check Out</label>
+          <input type="time" class="form-control" [(ngModel)]="editAttendance.check_out" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-control" [(ngModel)]="editAttendance.status">
+          <option *ngFor="let status of attendanceStatuses" [value]="status.value">{{ status.label }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" [(ngModel)]="editAttendance.notes" rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="updateAttendanceRecord()" class="btn btn-primary">Update Attendance</button>
+      <button (click)="closeEditAttendanceModal()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Mark Attendance Modal -->
+<div *ngIf="showBulkAttendanceModal" class="modal-overlay" (click)="closeBulkAttendanceModal()">
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Bulk Mark Attendance</h3>
+      <button (click)="closeBulkAttendanceModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Date *</label>
+        <input type="date" class="form-control" [(ngModel)]="bulkAttendanceDate" required />
+      </div>
+
+      <div class="bulk-attendance-list">
+        <div class="bulk-attendance-item" *ngFor="let record of bulkAttendanceRecords">
+          <div class="staff-info">
+            <strong>{{ record.staff.name }}</strong>
+            <small>{{ record.staff.position }}</small>
+          </div>
+          <div class="attendance-inputs">
+            <input type="time" class="form-control-sm" [(ngModel)]="record.check_in" />
+            <select class="form-control-sm" [(ngModel)]="record.status">
+              <option *ngFor="let status of attendanceStatuses" [value]="status.value">{{ status.label }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="bulkMarkAttendance()" class="btn btn-primary">Mark All Attendance</button>
+      <button (click)="closeBulkAttendanceModal()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>

@@ -77,6 +77,15 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
+.sidebar-brand .store-phone {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .sidebar-nav {
   list-style: none;
   padding: 15px 0;
@@ -152,6 +161,15 @@
 .logout-section .btn:hover {
   background: rgba(200, 35, 51, 1);
   transform: translateY(-2px);
+}
+
+.logout-section .logged-user {
+  display: block;
+  text-align: center;
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
 }
 
 /* Mobile Responsiveness */

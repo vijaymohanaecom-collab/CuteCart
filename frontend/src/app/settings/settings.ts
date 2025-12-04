@@ -24,8 +24,11 @@ export class SettingsComponent implements OnInit {
     invoice_prefix: 'INV',
     invoice_footer: '',
     enable_barcode: 0,
-    low_stock_threshold: 10
+    low_stock_threshold: 10,
+    discount_presets: ''
   };
+  
+  discountPresetsInput = '';
 
   constructor(
     private apiService: ApiService,
@@ -41,6 +44,17 @@ export class SettingsComponent implements OnInit {
     this.apiService.getSettings().subscribe({
       next: (settings) => {
         this.settings = settings;
+        
+        // Parse discount presets for display
+        if (settings.discount_presets) {
+          try {
+            const presets = JSON.parse(settings.discount_presets);
+            this.discountPresetsInput = presets.join(',');
+          } catch (e) {
+            this.discountPresetsInput = '';
+          }
+        }
+        
         this.cdr.detectChanges();
       },
       error: (err) => console.error('Error loading settings:', err)
@@ -48,6 +62,23 @@ export class SettingsComponent implements OnInit {
   }
 
   saveSettings(): void {
+    // Parse and validate discount presets
+    if (this.discountPresetsInput) {
+      try {
+        const presets = this.discountPresetsInput
+          .split(',') 
+          .map(p => parseFloat(p.trim()))
+          .filter(p => !isNaN(p) && p > 0 && p <= 100);
+        
+        this.settings.discount_presets = JSON.stringify(presets);
+      } catch (e) {
+        alert('Invalid discount presets format. Please use comma-separated numbers.');
+        return;
+      }
+    } else {
+      this.settings.discount_presets = JSON.stringify([5, 10, 15, 20]);
+    }
+    
     this.settingsService.updateSettings(this.settings).subscribe({
       next: () => {
         alert('Settings saved successfully! Changes will be applied across the application.');

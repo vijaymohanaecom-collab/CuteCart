@@ -2,6 +2,7 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from './services/auth.service';
+import { SettingsService } from './services/settings.service';
 
 @Component({
   selector: 'app-root',
@@ -13,14 +14,25 @@ import { AuthService } from './services/auth.service';
 export class App implements OnInit {
   sidebarOpen = false;
   isMobile = false;
+  storePhone = '';
 
   constructor(
     public authService: AuthService,
-    private router: Router
+    private router: Router,
+    private settingsService: SettingsService
   ) {}
 
   ngOnInit() {
     this.checkScreenSize();
+    this.loadStorePhone();
+  }
+
+  loadStorePhone(): void {
+    this.settingsService.settings$.subscribe(settings => {
+      if (settings && settings.store_phone) {
+        this.storePhone = settings.store_phone;
+      }
+    });
   }
 
   @HostListener('window:resize', ['$event'])

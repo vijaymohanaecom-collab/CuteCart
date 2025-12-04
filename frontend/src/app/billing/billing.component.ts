@@ -36,6 +36,9 @@ export class BillingComponent implements OnInit {
   taxRate = 0;
   taxAmount = 0;
   discount = 0;
+  discountType: 'percentage' | 'fixed' = 'fixed';
+  discountPercentage = 0;
+  discountPresets: number[] = [5, 10, 15, 20];
   total = 0;
 
   showInvoicePreview = false;
@@ -81,6 +84,16 @@ export class BillingComponent implements OnInit {
     const currentSettings = this.settingsService.getSettings();
     this.settings = currentSettings;
     this.taxRate = currentSettings.tax_rate !== undefined ? currentSettings.tax_rate : 0;
+    
+    // Load discount presets from settings
+    if (currentSettings.discount_presets) {
+      try {
+        this.discountPresets = JSON.parse(currentSettings.discount_presets);
+      } catch (e) {
+        console.warn('Error parsing discount presets, using defaults');
+      }
+    }
+    
     this.calculateTotals();
   }
 
@@ -170,6 +183,13 @@ export class BillingComponent implements OnInit {
   calculateTotals(): void {
     this.subtotal = this.cart.reduce((sum, item) => sum + item.total_price, 0);
     this.taxAmount = (this.subtotal * this.taxRate) / 100;
+    
+    // Calculate discount based on type
+    if (this.discountType === 'percentage') {
+      this.discount = (this.subtotal * this.discountPercentage) / 100;
+    }
+    // For 'fixed' type, discount is already set directly
+    
     this.total = this.subtotal + this.taxAmount - this.discount;
   }
 
@@ -179,6 +199,8 @@ export class BillingComponent implements OnInit {
     this.customerPhone = '';
     this.notes = '';
     this.discount = 0;
+    this.discountPercentage = 0;
+    this.discountType = 'fixed';
     this.calculateTotals();
   }
 
@@ -248,5 +270,26 @@ export class BillingComponent implements OnInit {
 
   checkout(): void {
     this.openInvoicePreview();
+  }
+
+  onDiscountTypeChange(): void {
+    // Reset discount values when switching type
+    this.discount = 0;
+    this.discountPercentage = 0;
+    this.calculateTotals();
+  }
+
+  applyDiscountPreset(percentage: number): void {
+    this.discountType = 'percentage';
+    this.discountPercentage = percentage;
+    this.calculateTotals();
+  }
+
+  onDiscountValueChange(): void {
+    this.calculateTotals();
+  }
+
+  onDiscountPercentageChange(): void {
+    this.calculateTotals();
   }
 }

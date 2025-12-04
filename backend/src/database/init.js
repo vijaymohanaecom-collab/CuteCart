@@ -69,6 +69,7 @@ async function initialize() {
       invoice_footer TEXT,
       enable_barcode INTEGER DEFAULT 0,
       low_stock_threshold INTEGER DEFAULT 10,
+      discount_presets TEXT,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
@@ -91,8 +92,9 @@ async function initialize() {
 
   // Insert default settings
   try {
-    await dbRun(`INSERT INTO settings (id, store_name, currency, tax_rate, invoice_prefix, invoice_footer, low_stock_threshold) 
-                 VALUES (1, 'CuteCart', 'INR', 10, 'INV', 'Thank you for your business!', 10)`);
+    await dbRun(`INSERT INTO settings (id, store_name, currency, tax_rate, invoice_prefix, invoice_footer, low_stock_threshold, discount_presets) 
+                 VALUES (1, 'CuteCart', 'INR', 10, 'INV', 'Thank you for your business!', 10, ?)`
+                 , [JSON.stringify([5, 10, 15, 20])]);
     console.log('Default settings created');
   } catch (err) {
     console.log('Settings already exist');

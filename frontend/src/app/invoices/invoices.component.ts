@@ -4,7 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
+import { PdfInvoiceService } from '../services/pdf-invoice.service';
+import { SettingsService } from '../services/settings.service';
 import { Invoice } from '../models/invoice.model';
+import { Settings } from '../models/settings.model';
 
 @Component({
   selector: 'app-invoices',
@@ -22,7 +25,7 @@ export class InvoicesComponent implements OnInit {
   editInvoice: Invoice | null = null;
 
   // Date filter properties
-  dateFilter: 'today' | 'yesterday' | 'this_week' | 'last_week' | 'this_month' | 'last_month' | 'custom' | 'all' = 'all';
+  dateFilter: 'today' | 'yesterday' | 'this_week' | 'last_week' | 'this_month' | 'last_month' | 'custom' | 'all' = 'today';
   customStartDate: string = '';
   customEndDate: string = '';
 
@@ -31,19 +34,34 @@ export class InvoicesComponent implements OnInit {
     totalSales: 0,
     totalProfit: 0,
     totalInvoices: 0,
-    averageOrderValue: 0
+    averageOrderValue: 0,
+    cashAmount: 0,
+    upiAmount: 0,
+    cardAmount: 0,
+    otherAmount: 0
   };
+
+  storeSettings: Settings | null = null;
 
   constructor(
     private apiService: ApiService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private authService: AuthService
+    private authService: AuthService,
+    private pdfService: PdfInvoiceService,
+    private settingsService: SettingsService
   ) {}
 
   ngOnInit(): void {
     this.loadInvoices();
     this.setDefaultCustomDates();
+    this.loadSettings();
+  }
+
+  loadSettings(): void {
+    this.settingsService.settings$.subscribe(settings => {
+      this.storeSettings = settings;
+    });
   }
 
   get isManager(): boolean {
@@ -188,6 +206,27 @@ export class InvoicesComponent implements OnInit {
     this.stats.averageOrderValue = this.stats.totalInvoices > 0 
       ? this.stats.totalSales / this.stats.totalInvoices 
       : 0;
+
+    // Calculate payment method breakdown
+    this.stats.cashAmount = 0;
+    this.stats.upiAmount = 0;
+    this.stats.cardAmount = 0;
+    this.stats.otherAmount = 0;
+
+    this.filteredInvoices.forEach(invoice => {
+      const amount = invoice.total || 0;
+      const paymentMethod = (invoice.payment_method || 'cash').toLowerCase();
+
+      if (paymentMethod === 'cash') {
+        this.stats.cashAmount += amount;
+      } else if (paymentMethod === 'upi') {
+        this.stats.upiAmount += amount;
+      } else if (paymentMethod === 'card') {
+        this.stats.cardAmount += amount;
+      } else {
+        this.stats.otherAmount += amount;
+      }
+    });
   }
 
   onDateFilterChange(): void {
@@ -267,5 +306,23 @@ export class InvoicesComponent implements OnInit {
         alert('Error deleting invoice. Please try again.');
       }
     });
+  }
+
+  async shareOnWhatsApp(invoice: Invoice): Promise<void> {
+    if (!invoice.customer_phone) {
+      alert('Customer phone number is not available for this invoice.');
+      return;
+    }
+
+    try {
+      await this.pdfService.shareViaWhatsApp(invoice, this.storeSettings);
+    } catch (error) {
+      console.error('Error sharing invoice:', error);
+      alert('Failed to share invoice. Please try again.');
+    }
+  }
+
+  hasPhoneNumber(invoice: Invoice): boolean {
+    return !!(invoice.customer_phone && invoice.customer_phone.trim().length > 0);
   }
 }

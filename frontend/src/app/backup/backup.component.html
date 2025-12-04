@@ -1,0 +1,189 @@
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">🔐 Data Backup & Recovery</h1>
+    <p class="page-subtitle">Manage automatic backups and restore your data</p>
+  </div>
+
+  <!-- Status Cards -->
+  <div class="stats-grid" *ngIf="status">
+    <div class="stat-card stat-primary">
+      <div class="stat-icon">☁️</div>
+      <div class="stat-content">
+        <div class="stat-label">Google Drive</div>
+        <div class="stat-value">{{ status.google_drive_enabled ? 'Enabled' : 'Disabled' }}</div>
+        <small>{{ status.google_drive_enabled ? 'Auto-backup active' : 'Local backups only' }}</small>
+      </div>
+    </div>
+
+    <div class="stat-card stat-success">
+      <div class="stat-icon">💾</div>
+      <div class="stat-content">
+        <div class="stat-label">Local Backups</div>
+        <div class="stat-value">{{ status.local_backup_count }}</div>
+        <small *ngIf="status.last_local_backup">Last: {{ getBackupAge(status.last_local_backup.created_at) }}</small>
+      </div>
+    </div>
+
+    <div class="stat-card stat-info" *ngIf="status.google_drive_enabled">
+      <div class="stat-icon">☁️</div>
+      <div class="stat-content">
+        <div class="stat-label">Drive Backups</div>
+        <div class="stat-value">{{ status.drive_backup_count }}</div>
+        <small *ngIf="status.last_drive_backup">Last: {{ getBackupAge(status.last_drive_backup.created_at) }}</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Banner -->
+  <div class="info-banner">
+    <div class="info-icon">ℹ️</div>
+    <div class="info-content">
+      <strong>Automatic Backups:</strong> Your database is automatically backed up daily at 2:00 AM.
+      The system keeps the last 7 backups and automatically deletes older ones.
+      <span *ngIf="status?.google_drive_enabled"> Backups are stored both locally and on Google Drive.</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Backup Management</h2>
+      <button 
+        (click)="createBackup()" 
+        class="btn btn-primary"
+        [disabled]="creatingBackup"
+        *ngIf="isManager"
+      >
+        <span *ngIf="!creatingBackup">➕ Create Backup Now</span>
+        <span *ngIf="creatingBackup">⏳ Creating...</span>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading backups...</p>
+    </div>
+
+    <!-- Backups Table -->
+    <div *ngIf="!loading" class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Backup File</th>
+            <th>Size</th>
+            <th>Created</th>
+            <th>Age</th>
+            <th>Location</th>
+            <th *ngIf="isAdmin">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let backup of backups">
+            <td>
+              <div class="filename">
+                <span class="file-icon">📦</span>
+                {{ backup.filename }}
+              </div>
+            </td>
+            <td>{{ formatBytes(backup.size) }}</td>
+            <td>{{ formatDate(backup.created_at) }}</td>
+            <td>
+              <span class="age-badge">{{ getBackupAge(backup.created_at) }}</span>
+            </td>
+            <td>
+              <span class="location-badge" [class.local]="backup.type === 'local'" [class.drive]="backup.type === 'google_drive'">
+                {{ backup.type === 'google_drive' ? '☁️ Google Drive' : '💾 Local' }}
+              </span>
+            </td>
+            <td *ngIf="isAdmin">
+              <button 
+                (click)="downloadBackup(backup)" 
+                class="btn btn-sm btn-primary action-btn"
+                title="Download backup"
+              >
+                ⬇️ Download
+              </button>
+              <button 
+                *ngIf="backup.type === 'google_drive' && backup.drive_file_url"
+                (click)="openDriveLink(backup)" 
+                class="btn btn-sm btn-info action-btn"
+                title="Open in Google Drive"
+              >
+                🔗 Drive
+              </button>
+              <button 
+                (click)="deleteBackup(backup)" 
+                class="btn btn-sm btn-danger action-btn"
+                title="Delete backup"
+              >
+                🗑️ Delete
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="backups.length === 0">
+            <td [attr.colspan]="isAdmin ? 6 : 5" class="no-results">
+              <div class="empty-state">
+                <div class="empty-icon">📦</div>
+                <p>No backups found</p>
+                <small>Create your first backup to get started</small>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Setup Instructions -->
+  <div class="card setup-card" *ngIf="!status?.google_drive_enabled && isAdmin">
+    <div class="card-header">
+      <h2 class="card-title">🔧 Setup Google Drive Backup</h2>
+    </div>
+    <div class="setup-content">
+      <p><strong>To enable automatic Google Drive backups:</strong></p>
+      <ol>
+        <li>Create a Google Cloud Project and enable the Google Drive API</li>
+        <li>Create a Service Account and download the JSON credentials</li>
+        <li>Add the following to your <code>.env.production</code> file:</li>
+      </ol>
+      <div class="code-block">
+        <pre>GOOGLE_DRIVE_CREDENTIALS='{{ '{' }}"type":"service_account",...{{ '}' }}'
+GOOGLE_DRIVE_FOLDER_ID='your-folder-id'
+AUTO_BACKUP_ENABLED=true
+BACKUP_SCHEDULE='0 2 * * *'
+BACKUP_RETENTION_COUNT=7</pre>
+      </div>
+      <p><strong>Configuration Options:</strong></p>
+      <ul>
+        <li><code>BACKUP_SCHEDULE</code>: Cron expression (default: 2 AM daily)</li>
+        <li><code>BACKUP_RETENTION_COUNT</code>: Number of backups to keep (default: 7)</li>
+        <li><code>AUTO_BACKUP_ENABLED</code>: Enable/disable automatic backups</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Restore Instructions -->
+  <div class="card restore-card">
+    <div class="card-header">
+      <h2 class="card-title">♻️ How to Restore from Backup</h2>
+    </div>
+    <div class="restore-content">
+      <div class="warning-banner">
+        <div class="warning-icon">⚠️</div>
+        <div class="warning-text">
+          <strong>Important:</strong> Restoring from a backup will replace your current database.
+          Always create a fresh backup before restoring!
+        </div>
+      </div>
+      <p><strong>Manual Restoration Steps:</strong></p>
+      <ol>
+        <li>Download the backup file you want to restore</li>
+        <li>Stop the backend server</li>
+        <li>Extract the <code>database.db</code> file from the ZIP</li>
+        <li>Replace the current <code>database.db</code> in the backend folder</li>
+        <li>Restart the backend server</li>
+      </ol>
+      <p><small>💡 Tip: Keep multiple backups in different locations for maximum safety</small></p>
+    </div>
+  </div>
+</div>

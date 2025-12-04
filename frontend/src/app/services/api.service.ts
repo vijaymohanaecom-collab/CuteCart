@@ -6,6 +6,8 @@ import { Product } from '../models/product.model';
 import { Invoice } from '../models/invoice.model';
 import { User } from '../models/user.model';
 import { Settings } from '../models/settings.model';
+import { Expense } from '../models/expense.model';
+import { Staff, Attendance, AttendanceWithStaff } from '../models/staff.model';
 
 @Injectable({
   providedIn: 'root'
@@ -103,5 +105,135 @@ export class ApiService {
 
   backupDatabase(): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/settings/backup`, { responseType: 'blob' });
+  }
+
+  // Expenses
+  getExpenses(): Observable<Expense[]> {
+    return this.http.get<Expense[]>(`${this.apiUrl}/expenses`);
+  }
+
+  getExpensesByDateRange(startDate: string, endDate: string): Observable<Expense[]> {
+    return this.http.get<Expense[]>(`${this.apiUrl}/expenses/range?startDate=${startDate}&endDate=${endDate}`);
+  }
+
+  getExpense(id: number): Observable<Expense> {
+    return this.http.get<Expense>(`${this.apiUrl}/expenses/${id}`);
+  }
+
+  createExpense(expense: Expense): Observable<Expense> {
+    return this.http.post<Expense>(`${this.apiUrl}/expenses`, expense);
+  }
+
+  updateExpense(id: number, expense: Expense): Observable<Expense> {
+    return this.http.put<Expense>(`${this.apiUrl}/expenses/${id}`, expense);
+  }
+
+  deleteExpense(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/expenses/${id}`);
+  }
+
+  getExpenseStats(startDate?: string, endDate?: string): Observable<any> {
+    let url = `${this.apiUrl}/expenses/stats/summary`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+    return this.http.get(url);
+  }
+
+  // Staff
+  getStaff(status?: string): Observable<Staff[]> {
+    let url = `${this.apiUrl}/staff`;
+    if (status) {
+      url += `?status=${status}`;
+    }
+    return this.http.get<Staff[]>(url);
+  }
+
+  getStaffMember(id: number): Observable<Staff> {
+    return this.http.get<Staff>(`${this.apiUrl}/staff/${id}`);
+  }
+
+  createStaff(staff: Staff): Observable<Staff> {
+    return this.http.post<Staff>(`${this.apiUrl}/staff`, staff);
+  }
+
+  updateStaff(id: number, staff: Staff): Observable<Staff> {
+    return this.http.put<Staff>(`${this.apiUrl}/staff/${id}`, staff);
+  }
+
+  deleteStaff(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/staff/${id}`);
+  }
+
+  getStaffStats(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/staff/stats/summary`);
+  }
+
+  // Attendance
+  getAttendance(params?: { date?: string; staff_id?: number; startDate?: string; endDate?: string }): Observable<AttendanceWithStaff[]> {
+    let url = `${this.apiUrl}/attendance`;
+    const queryParams: string[] = [];
+    
+    if (params) {
+      if (params.date) queryParams.push(`date=${params.date}`);
+      if (params.staff_id) queryParams.push(`staff_id=${params.staff_id}`);
+      if (params.startDate) queryParams.push(`startDate=${params.startDate}`);
+      if (params.endDate) queryParams.push(`endDate=${params.endDate}`);
+    }
+    
+    if (queryParams.length > 0) {
+      url += `?${queryParams.join('&')}`;
+    }
+    
+    return this.http.get<AttendanceWithStaff[]>(url);
+  }
+
+  getAttendanceRecord(id: number): Observable<AttendanceWithStaff> {
+    return this.http.get<AttendanceWithStaff>(`${this.apiUrl}/attendance/${id}`);
+  }
+
+  markAttendance(attendance: Attendance): Observable<AttendanceWithStaff> {
+    return this.http.post<AttendanceWithStaff>(`${this.apiUrl}/attendance`, attendance);
+  }
+
+  updateAttendance(id: number, attendance: Partial<Attendance>): Observable<AttendanceWithStaff> {
+    return this.http.put<AttendanceWithStaff>(`${this.apiUrl}/attendance/${id}`, attendance);
+  }
+
+  deleteAttendance(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/attendance/${id}`);
+  }
+
+  bulkMarkAttendance(date: string, records: Partial<Attendance>[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/attendance/bulk`, { date, records });
+  }
+
+  getAttendanceStats(startDate?: string, endDate?: string): Observable<any> {
+    let url = `${this.apiUrl}/attendance/stats/summary`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+    return this.http.get(url);
+  }
+
+  // Backup
+  getBackupStatus(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/backup/status`);
+  }
+
+  createBackup(): Observable<any> {
+    return this.http.post(`${this.apiUrl}/backup/create`, {});
+  }
+
+  listBackups(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/backup/list`);
+  }
+
+  deleteBackup(filename: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/backup/${filename}`);
+  }
+
+  downloadBackup(filename: string): string {
+    return `${this.apiUrl}/backup/download/${filename}`;
   }
 }

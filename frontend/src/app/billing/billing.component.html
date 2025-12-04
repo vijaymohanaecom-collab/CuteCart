@@ -156,17 +156,60 @@
         </div>
         <div class="total-row discount-row">
           <span>Discount:</span>
-          <div class="discount-input-wrapper">
-            <span class="currency-symbol">₹</span>
-            <input 
-              type="number" 
-              [(ngModel)]="discount"
-              (ngModelChange)="calculateTotals()"
-              min="0"
-              class="discount-input"
-              placeholder="0.00"
-            />
+          <div class="discount-controls">
+            <div class="discount-type-selector">
+              <button 
+                class="discount-type-btn" 
+                [class.active]="discountType === 'fixed'"
+                (click)="discountType = 'fixed'; onDiscountTypeChange()"
+              >
+                ₹ Fixed
+              </button>
+              <button 
+                class="discount-type-btn" 
+                [class.active]="discountType === 'percentage'"
+                (click)="discountType = 'percentage'; onDiscountTypeChange()"
+              >
+                % Percent
+              </button>
+            </div>
+            
+            <div class="discount-input-wrapper" *ngIf="discountType === 'fixed'">
+              <span class="currency-symbol">₹</span>
+              <input 
+                type="number" 
+                [(ngModel)]="discount"
+                (ngModelChange)="onDiscountValueChange()"
+                min="0"
+                class="discount-input"
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div class="discount-input-wrapper" *ngIf="discountType === 'percentage'">
+              <input 
+                type="number" 
+                [(ngModel)]="discountPercentage"
+                (ngModelChange)="onDiscountPercentageChange()"
+                min="0"
+                max="100"
+                class="discount-input"
+                placeholder="0"
+              />
+              <span class="currency-symbol">%</span>
+            </div>
           </div>
+        </div>
+        
+        <div class="discount-presets" *ngIf="discountType === 'percentage'">
+          <button 
+            *ngFor="let preset of discountPresets"
+            class="preset-btn"
+            (click)="applyDiscountPreset(preset)"
+            [class.active]="discountPercentage === preset"
+          >
+            {{ preset }}%
+          </button>
         </div>
         <div class="total-row grand-total">
           <span>Total:</span>

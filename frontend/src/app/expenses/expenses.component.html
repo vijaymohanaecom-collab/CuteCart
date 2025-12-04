@@ -1,0 +1,295 @@
+<div class="container">
+  <!-- Statistics Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">💸</div>
+      <div class="stat-content">
+        <div class="stat-label">Total Expenses</div>
+        <div class="stat-value">₹{{ stats.totalExpenses | number:'1.2-2' }}</div>
+      </div>
+    </div>
+    
+    <div class="stat-card stat-info">
+      <div class="stat-icon">📝</div>
+      <div class="stat-content">
+        <div class="stat-label">Expense Count</div>
+        <div class="stat-value">{{ stats.expenseCount }}</div>
+      </div>
+    </div>
+    
+    <div class="stat-card stat-purple" *ngIf="stats.byCategory.length > 0">
+      <div class="stat-icon">📊</div>
+      <div class="stat-content">
+        <div class="stat-label">Top Category</div>
+        <div class="stat-value">{{ stats.byCategory[0].category }}</div>
+        <small>₹{{ stats.byCategory[0].total | number:'1.2-2' }}</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Expense Tracking</h2>
+      <button (click)="openAddModal()" class="btn btn-primary">
+        ➕ Add Expense
+      </button>
+    </div>
+
+    <!-- Date Filter Section -->
+    <div class="filters-section">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label class="filter-label">📅 Date Range</label>
+          <select 
+            class="filter-select" 
+            [(ngModel)]="dateFilter" 
+            (ngModelChange)="onDateFilterChange()"
+          >
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="this_week">This Week</option>
+            <option value="last_week">Last Week</option>
+            <option value="this_month">This Month</option>
+            <option value="last_month">Last Month</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+
+        <div class="filter-group" *ngIf="dateFilter === 'custom'">
+          <label class="filter-label">From Date</label>
+          <input 
+            type="date" 
+            class="filter-input" 
+            [(ngModel)]="customStartDate" 
+            (ngModelChange)="onCustomDateChange()"
+          />
+        </div>
+
+        <div class="filter-group" *ngIf="dateFilter === 'custom'">
+          <label class="filter-label">To Date</label>
+          <input 
+            type="date" 
+            class="filter-input" 
+            [(ngModel)]="customEndDate" 
+            (ngModelChange)="onCustomDateChange()"
+          />
+        </div>
+      </div>
+
+      <div class="filter-results">
+        Showing <strong>{{ filteredExpenses.length }}</strong> of <strong>{{ expenses.length }}</strong> expenses
+      </div>
+    </div>
+
+    <!-- Expenses Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Payment</th>
+            <th>Added By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let expense of filteredExpenses">
+            <td>{{ expense.date | date:'dd MMM yyyy' }}</td>
+            <td><span class="category-badge">{{ expense.category }}</span></td>
+            <td>{{ expense.description }}</td>
+            <td class="amount-cell">₹{{ expense.amount | number:'1.2-2' }}</td>
+            <td>{{ expense.payment_method | titlecase }}</td>
+            <td>{{ expense.created_by || 'N/A' }}</td>
+            <td>
+              <button (click)="openEditModal(expense)" class="btn btn-sm btn-warning action-btn" *ngIf="isManager">Edit</button>
+              <button (click)="deleteExpense(expense)" class="btn btn-sm btn-danger action-btn" *ngIf="isManager">Delete</button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredExpenses.length === 0">
+            <td colspan="7" class="no-results">
+              No expenses found for the selected date range
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Category Breakdown -->
+  <div class="card" *ngIf="stats.byCategory.length > 0">
+    <div class="card-header">
+      <h2 class="card-title">Expenses by Category</h2>
+    </div>
+    <div class="category-breakdown">
+      <div class="category-item" *ngFor="let cat of stats.byCategory">
+        <div class="category-info">
+          <span class="category-name">{{ cat.category }}</span>
+          <span class="category-amount">₹{{ cat.total | number:'1.2-2' }}</span>
+        </div>
+        <div class="category-bar">
+          <div class="category-bar-fill" [style.width.%]="(cat.total / stats.totalExpenses) * 100"></div>
+        </div>
+        <div class="category-percentage">
+          {{ ((cat.total / stats.totalExpenses) * 100) | number:'1.1-1' }}%
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Expense Modal -->
+<div *ngIf="showAddModal" class="modal-overlay" (click)="closeAddModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Add New Expense</h3>
+      <button (click)="closeAddModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Date *</label>
+      <input 
+        type="date" 
+        class="form-control" 
+        [(ngModel)]="newExpense.date"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Category *</label>
+      <select class="form-control" [(ngModel)]="newExpense.category" required>
+        <option value="">Select Category</option>
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Description *</label>
+      <input 
+        type="text" 
+        class="form-control" 
+        [(ngModel)]="newExpense.description"
+        placeholder="Brief description of the expense"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Amount (₹) *</label>
+      <input 
+        type="number" 
+        class="form-control" 
+        [(ngModel)]="newExpense.amount"
+        min="0"
+        step="0.01"
+        placeholder="0.00"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Payment Method</label>
+      <select class="form-control" [(ngModel)]="newExpense.payment_method">
+        <option value="cash">Cash</option>
+        <option value="card">Card</option>
+        <option value="upi">UPI</option>
+        <option value="bank_transfer">Bank Transfer</option>
+        <option value="cheque">Cheque</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea 
+        class="form-control" 
+        [(ngModel)]="newExpense.notes"
+        rows="3"
+        placeholder="Additional notes (optional)"
+      ></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="saveExpense()" class="btn btn-primary">Save Expense</button>
+      <button (click)="closeAddModal()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Expense Modal -->
+<div *ngIf="showEditModal && editExpense" class="modal-overlay" (click)="closeEditModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Expense</h3>
+      <button (click)="closeEditModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Date *</label>
+      <input 
+        type="date" 
+        class="form-control" 
+        [(ngModel)]="editExpense.date"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Category *</label>
+      <select class="form-control" [(ngModel)]="editExpense.category" required>
+        <option value="">Select Category</option>
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Description *</label>
+      <input 
+        type="text" 
+        class="form-control" 
+        [(ngModel)]="editExpense.description"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Amount (₹) *</label>
+      <input 
+        type="number" 
+        class="form-control" 
+        [(ngModel)]="editExpense.amount"
+        min="0"
+        step="0.01"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Payment Method</label>
+      <select class="form-control" [(ngModel)]="editExpense.payment_method">
+        <option value="cash">Cash</option>
+        <option value="card">Card</option>
+        <option value="upi">UPI</option>
+        <option value="bank_transfer">Bank Transfer</option>
+        <option value="cheque">Cheque</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea 
+        class="form-control" 
+        [(ngModel)]="editExpense.notes"
+        rows="3"
+      ></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="updateExpense()" class="btn btn-primary">Update Expense</button>
+      <button (click)="closeEditModal()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>

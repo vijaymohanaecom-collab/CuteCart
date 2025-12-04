@@ -20,7 +20,7 @@
   <aside class="sidebar" [class.sidebar-open]="sidebarOpen" *ngIf="authService.isLoggedIn()">
     <div class="sidebar-brand">
       <div>🛒 CuteCart</div>
-      <small>{{ authService.getCurrentUser()?.role || 'User' }}</small>
+      <small class="store-phone" *ngIf="storePhone">📞 {{ storePhone }}</small>
     </div>
 
     <ul class="sidebar-nav">
@@ -43,9 +43,27 @@
         </a>
       </li>
       <li *ngIf="authService.isManager()">
+        <a routerLink="/expenses" [class.active]="isActive('/expenses')" class="sidebar-link" (click)="closeSidebarOnMobile()">
+          <span class="nav-icon">💸</span>
+          <span>Expenses</span>
+        </a>
+      </li>
+      <li *ngIf="authService.isManager()">
+        <a routerLink="/staff" [class.active]="isActive('/staff')" class="sidebar-link" (click)="closeSidebarOnMobile()">
+          <span class="nav-icon">👥</span>
+          <span>Staff</span>
+        </a>
+      </li>
+      <li *ngIf="authService.isManager()">
         <a routerLink="/products" [class.active]="isActive('/products')" class="sidebar-link" (click)="closeSidebarOnMobile()">
           <span class="nav-icon">📦</span>
           <span>Products</span>
+        </a>
+      </li>
+      <li *ngIf="authService.isManager()">
+        <a routerLink="/backup" [class.active]="isActive('/backup')" class="sidebar-link" (click)="closeSidebarOnMobile()">
+          <span class="nav-icon">🔐</span>
+          <span>Backup</span>
         </a>
       </li>
       <li *ngIf="authService.isAdmin()">
@@ -66,6 +84,7 @@
       <button (click)="logout()" class="btn btn-danger w-full">
         🚪 Logout
       </button>
+      <small class="logged-user">{{ authService.getCurrentUser()?.username || 'User' }}</small>
     </div>
   </aside>
 

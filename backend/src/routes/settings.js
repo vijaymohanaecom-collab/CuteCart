@@ -17,15 +17,15 @@ router.get('/', async (req, res) => {
 // Update settings
 router.put('/', async (req, res) => {
   try {
-    const { store_name, store_address, store_phone, store_email, store_website, tax_rate, currency, invoice_prefix, invoice_footer, enable_barcode, low_stock_threshold } = req.body;
+    const { store_name, store_address, store_phone, store_email, store_website, tax_rate, currency, invoice_prefix, invoice_footer, enable_barcode, low_stock_threshold, discount_presets } = req.body;
 
     await dbRun(
       `UPDATE settings SET 
         store_name = ?, store_address = ?, store_phone = ?, store_email = ?, store_website = ?,
         tax_rate = ?, currency = ?, invoice_prefix = ?, invoice_footer = ?, 
-        enable_barcode = ?, low_stock_threshold = ?, updated_at = CURRENT_TIMESTAMP
+        enable_barcode = ?, low_stock_threshold = ?, discount_presets = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = 1`,
-      [store_name, store_address, store_phone, store_email, store_website, tax_rate, currency, invoice_prefix, invoice_footer, enable_barcode, low_stock_threshold]
+      [store_name, store_address, store_phone, store_email, store_website, tax_rate, currency, invoice_prefix, invoice_footer, enable_barcode, low_stock_threshold, discount_presets]
     );
 
     const settings = await dbGet('SELECT * FROM settings WHERE id = 1');

@@ -58,6 +58,76 @@
   line-height: 1;
 }
 
+/* Payment Method Breakdown */
+.payment-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.payment-card {
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid transparent;
+}
+
+.payment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.payment-card.cash-card {
+  background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+  color: white;
+  border-color: #56ab2f;
+}
+
+.payment-card.upi-card {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: white;
+  border-color: #1e3c72;
+}
+
+.payment-card.card-card {
+  background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);
+  color: white;
+  border-color: #f2994a;
+}
+
+.payment-card.other-card {
+  background: linear-gradient(135deg, #757f9a 0%, #d7dde8 100%);
+  color: #333;
+  border-color: #757f9a;
+}
+
+.payment-icon {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.payment-content {
+  flex: 1;
+}
+
+.payment-label {
+  font-size: 13px;
+  opacity: 0.9;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.payment-value {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 /* Filters Section */
 .filters-section {
   background: #f8f9fa;
@@ -135,6 +205,32 @@
   margin-right: 0;
 }
 
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #ccc !important;
+  border-color: #ccc !important;
+}
+
+.action-btn:disabled:hover {
+  background-color: #ccc !important;
+  transform: none;
+}
+
+/* WhatsApp Button */
+.whatsapp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.whatsapp-icon {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .stats-grid {
@@ -153,6 +249,24 @@
 
   .stat-value {
     font-size: 24px;
+  }
+
+  .payment-breakdown {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .payment-card {
+    padding: 16px;
+  }
+
+  .payment-icon {
+    font-size: 28px;
+  }
+
+  .payment-value {
+    font-size: 20px;
   }
 
   .filter-row {

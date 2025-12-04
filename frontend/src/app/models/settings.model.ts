@@ -11,5 +11,6 @@ export interface Settings {
   invoice_footer?: string;
   enable_barcode?: number;
   low_stock_threshold?: number;
+  discount_presets?: string; // JSON string of discount percentages
   updated_at?: string;
 }
