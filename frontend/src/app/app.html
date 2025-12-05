@@ -24,7 +24,7 @@
     </div>
 
     <ul class="sidebar-nav">
-      <li>
+      <li *ngIf="!authService.isSalesPerson()">
         <a routerLink="/dashboard" [class.active]="isActive('/dashboard')" class="sidebar-link" (click)="closeSidebarOnMobile()">
           <span class="nav-icon">📊</span>
           <span>Dashboard</span>

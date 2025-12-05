@@ -68,6 +68,10 @@ export class InvoicesComponent implements OnInit {
     return this.authService.isManager();
   }
 
+  get isSalesPerson(): boolean {
+    return this.authService.isSalesPerson();
+  }
+
   setDefaultCustomDates(): void {
     const today = new Date();
     const lastMonth = new Date(today);
@@ -100,6 +104,23 @@ export class InvoicesComponent implements OnInit {
   applyDateFilter(): void {
     const now = new Date();
     let filtered = [...this.invoices];
+
+    // Sales person only sees today's invoices
+    if (this.isSalesPerson) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      filtered = filtered.filter(invoice => {
+        const invoiceDate = new Date(invoice.created_at!);
+        return invoiceDate >= today && invoiceDate <= endOfDay;
+      });
+      
+      this.filteredInvoices = filtered;
+      this.calculateStatistics();
+      return;
+    }
 
     if (this.dateFilter === 'all') {
       this.filteredInvoices = filtered;

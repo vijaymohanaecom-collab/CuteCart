@@ -163,6 +163,11 @@ export class AuthService {
     return this.isManager();
   }
 
+  isSalesPerson(): boolean {
+    const user = this.getCurrentUser();
+    return user?.role === 'sales';
+  }
+
   resetInactivityTimer(): void {
     if (this.inactivityTimer) {
       clearTimeout(this.inactivityTimer);

@@ -1,6 +1,6 @@
 <div class="container">
   <!-- Statistics Cards -->
-  <div class="stats-grid">
+  <div class="stats-grid" *ngIf="!isSalesPerson">
     <div class="stat-card">
       <div class="stat-icon">💰</div>
       <div class="stat-content">
@@ -35,7 +35,7 @@
   </div>
 
   <!-- Payment Method Breakdown -->
-  <div class="payment-breakdown">
+  <div class="payment-breakdown" *ngIf="!isSalesPerson">
     <div class="payment-card cash-card">
       <div class="payment-icon">💵</div>
       <div class="payment-content">
@@ -75,7 +75,7 @@
     </div>
 
     <!-- Date Filter Section -->
-    <div class="filters-section">
+    <div class="filters-section" *ngIf="!isSalesPerson">
       <div class="filter-row">
         <div class="filter-group">
           <label class="filter-label">📅 Date Range</label>
@@ -153,7 +153,7 @@
                 </svg>
                 WhatsApp
               </button>
-              <button (click)="openEditModal(invoice)" class="btn btn-sm btn-warning action-btn" *ngIf="isManager">Edit</button>
+              <button (click)="openEditModal(invoice)" class="btn btn-sm btn-warning action-btn" *ngIf="isManager || isSalesPerson">Edit</button>
               <button (click)="deleteInvoice(invoice)" class="btn btn-sm btn-danger action-btn" *ngIf="isManager">Delete</button>
             </td>
           </tr>
