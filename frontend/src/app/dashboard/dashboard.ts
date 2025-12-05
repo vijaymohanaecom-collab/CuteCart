@@ -40,7 +40,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.initCharts();
+    this.loadChartData();
   }
 
   loadStats(): void {
@@ -58,16 +58,50 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     });
   }
 
-  initCharts(): void {
-    // Sales Chart
+  loadChartData(): void {
+    // Load weekly sales data
+    this.apiService.getWeeklySales().subscribe({
+      next: (weeklyData) => {
+        const labels = weeklyData.map(d => d.day);
+        const data = weeklyData.map(d => d.total);
+        this.initSalesChart(labels, data);
+      },
+      error: (err) => {
+        console.error('Error loading weekly sales:', err);
+        // Fallback to empty data
+        this.initSalesChart(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], [0, 0, 0, 0, 0, 0, 0]);
+      }
+    });
+
+    // Load category sales data
+    this.apiService.getCategorySales().subscribe({
+      next: (categoryData) => {
+        if (categoryData.length > 0) {
+          const labels = categoryData.map(d => d.category || 'Uncategorized');
+          const data = categoryData.map(d => d.total);
+          this.initCategoryChart(labels, data);
+        } else {
+          // No data available
+          this.initCategoryChart(['No Data'], [1]);
+        }
+      },
+      error: (err) => {
+        console.error('Error loading category sales:', err);
+        // Fallback to empty data
+        this.initCategoryChart(['No Data'], [1]);
+      }
+    });
+  }
+
+  initSalesChart(labels: string[], data: number[]): void {
     const salesCtx = this.salesChartRef.nativeElement.getContext('2d');
     this.salesChart = new Chart(salesCtx, {
       type: 'line',
       data: {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        labels: labels,
         datasets: [{
-          label: 'Sales',
-          data: [12, 19, 15, 25, 22, 30, 28],
+          label: 'Sales (₹)',
+          data: data,
           borderColor: '#667eea',
           backgroundColor: 'rgba(102, 126, 234, 0.1)',
           tension: 0.4,
@@ -79,31 +113,66 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            display: false
+            display: true
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context: any) {
+                const value = context.parsed?.y ?? 0;
+                return '₹' + value.toFixed(2);
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '₹' + value;
+              }
+            }
           }
         }
       }
     });
+  }
 
-    // Category Chart
+  initCategoryChart(labels: string[], data: number[]): void {
     const categoryCtx = this.categoryChartRef.nativeElement.getContext('2d');
     this.categoryChart = new Chart(categoryCtx, {
       type: 'doughnut',
       data: {
-        labels: ['Electronics', 'Clothing', 'Food', 'Others'],
+        labels: labels,
         datasets: [{
-          data: [30, 25, 20, 25],
+          data: data,
           backgroundColor: [
             '#667eea',
             '#764ba2',
             '#f093fb',
-            '#4facfe'
+            '#4facfe',
+            '#00f2fe',
+            '#43e97b'
           ]
         }]
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context: any) {
+                const label = context.label || '';
+                const value = context.parsed ?? 0;
+                return label + ': ₹' + value.toFixed(2);
+              }
+            }
+          }
+        }
       }
     });
   }

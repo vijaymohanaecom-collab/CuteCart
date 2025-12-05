@@ -203,4 +203,52 @@ router.get('/stats/summary', async (req, res) => {
   }
 });
 
+// Get weekly sales data for chart
+router.get('/stats/weekly', async (req, res) => {
+  try {
+    const weeklyData = [];
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    // Get last 7 days of data
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const dayStats = await dbGet(
+        'SELECT COALESCE(SUM(total), 0) as total FROM invoices WHERE DATE(created_at) = ?',
+        [dateStr]
+      );
+      
+      weeklyData.push({
+        day: days[date.getDay()],
+        total: dayStats.total || 0
+      });
+    }
+    
+    res.json(weeklyData);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get category sales data for chart
+router.get('/stats/categories', async (req, res) => {
+  try {
+    const categoryData = await dbAll(`
+      SELECT 
+        p.category,
+        COALESCE(SUM(ii.total_price), 0) as total
+      FROM invoice_items ii
+      JOIN products p ON ii.product_id = p.id
+      GROUP BY p.category
+      ORDER BY total DESC
+    `);
+    
+    res.json(categoryData);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

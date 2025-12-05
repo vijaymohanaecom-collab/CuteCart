@@ -73,6 +73,14 @@ export class ApiService {
     return this.http.get(`${this.apiUrl}/invoices/stats/summary`);
   }
 
+  getWeeklySales(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/invoices/stats/weekly`);
+  }
+
+  getCategorySales(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/invoices/stats/categories`);
+  }
+
   getCustomers(): Observable<{customer_name: string, customer_phone: string}[]> {
     return this.http.get<{customer_name: string, customer_phone: string}[]>(`${this.apiUrl}/invoices/customers/list`);
   }
