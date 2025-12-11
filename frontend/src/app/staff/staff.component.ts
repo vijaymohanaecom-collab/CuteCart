@@ -25,6 +25,13 @@ export class StaffComponent implements OnInit {
   attendanceRecords: AttendanceWithStaff[] = [];
   attendanceStatuses = ATTENDANCE_STATUS;
   
+  // Calendar view
+  calendarView = true;
+  currentMonth: Date = new Date();
+  calendarDays: any[] = [];
+  selectedStaffForCalendar: number | null = null;
+  attendanceMap: Map<string, Attendance> = new Map();
+  
   // Staff modals
   showAddStaffModal = false;
   showEditStaffModal = false;
@@ -77,8 +84,9 @@ export class StaffComponent implements OnInit {
 
   ngOnInit(): void {
     this.setDefaultDates();
-    this.loadStaff();
+    this.loadStaffAndSelectFirst();
     this.loadAttendance();
+    this.generateCalendar();
   }
 
   get isManager(): boolean {
@@ -124,6 +132,29 @@ export class StaffComponent implements OnInit {
         this.staffList = staff;
         this.filteredStaff = staff;
         this.loadStaffStats();
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error loading staff:', err)
+    });
+  }
+
+  loadStaffAndSelectFirst(): void {
+    const status = this.staffStatusFilter === 'all' ? undefined : this.staffStatusFilter;
+    this.apiService.getStaff(status).subscribe({
+      next: (staff) => {
+        this.staffList = staff;
+        this.filteredStaff = staff;
+        this.loadStaffStats();
+        
+        // Auto-select first active staff member for calendar
+        if (this.calendarView && staff.length > 0) {
+          const firstActiveStaff = staff.find(s => s.status === 'active');
+          if (firstActiveStaff && firstActiveStaff.id) {
+            this.selectedStaffForCalendar = firstActiveStaff.id;
+            this.generateCalendar();
+          }
+        }
+        
         this.cdr.detectChanges();
       },
       error: (err) => console.error('Error loading staff:', err)
@@ -320,6 +351,9 @@ export class StaffComponent implements OnInit {
     this.apiService.markAttendance(this.newAttendance).subscribe({
       next: () => {
         this.loadAttendance();
+        if (this.calendarView && this.selectedStaffForCalendar) {
+          this.loadMonthAttendance();
+        }
         this.closeMarkAttendanceModal();
       },
       error: (err) => {
@@ -371,6 +405,9 @@ export class StaffComponent implements OnInit {
     }).subscribe({
       next: () => {
         this.loadAttendance();
+        if (this.calendarView && this.selectedStaffForCalendar) {
+          this.loadMonthAttendance();
+        }
         this.closeEditAttendanceModal();
       },
       error: (err) => {
@@ -395,6 +432,9 @@ export class StaffComponent implements OnInit {
     this.apiService.deleteAttendance(attendance.id).subscribe({
       next: () => {
         this.loadAttendance();
+        if (this.calendarView && this.selectedStaffForCalendar) {
+          this.loadMonthAttendance();
+        }
       },
       error: (err) => {
         console.error('Error deleting attendance:', err);
@@ -411,5 +451,142 @@ export class StaffComponent implements OnInit {
   getStatusLabel(status: string): string {
     const statusObj = this.attendanceStatuses.find(s => s.value === status);
     return statusObj?.label || status;
+  }
+
+  getStatusIcon(status: string): string {
+    const statusObj = this.attendanceStatuses.find(s => s.value === status);
+    return statusObj?.icon || '';
+  }
+
+  // Calendar View Methods
+  toggleView(): void {
+    this.calendarView = !this.calendarView;
+    if (this.calendarView) {
+      this.generateCalendar();
+    }
+  }
+
+  generateCalendar(): void {
+    const year = this.currentMonth.getFullYear();
+    const month = this.currentMonth.getMonth();
+    
+    // Get first day of month and last day of month
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    // Get the day of week for first day (0 = Sunday)
+    const startingDayOfWeek = firstDay.getDay();
+    
+    // Calculate total cells needed
+    const daysInMonth = lastDay.getDate();
+    
+    this.calendarDays = [];
+    
+    // Add empty cells for days before month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      this.calendarDays.push({ isEmpty: true });
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dateStr = this.formatDateForInput(date);
+      const dayOfWeek = date.getDay();
+      
+      this.calendarDays.push({
+        date: date,
+        day: day,
+        dateStr: dateStr,
+        isToday: this.isToday(date),
+        isSunday: dayOfWeek === 0,
+        isEmpty: false
+      });
+    }
+    
+    // Load attendance for current month if staff is selected
+    if (this.selectedStaffForCalendar) {
+      this.loadMonthAttendance();
+    }
+  }
+
+  loadMonthAttendance(): void {
+    if (!this.selectedStaffForCalendar) return;
+    
+    const year = this.currentMonth.getFullYear();
+    const month = this.currentMonth.getMonth();
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0);
+    
+    const params = {
+      staff_id: this.selectedStaffForCalendar,
+      startDate: this.formatDateForInput(startDate),
+      endDate: this.formatDateForInput(endDate)
+    };
+    
+    this.apiService.getAttendance(params).subscribe({
+      next: (records) => {
+        this.attendanceMap.clear();
+        records.forEach(record => {
+          this.attendanceMap.set(record.date, record);
+        });
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error loading month attendance:', err)
+    });
+  }
+
+  previousMonth(): void {
+    this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() - 1, 1);
+    this.generateCalendar();
+  }
+
+  nextMonth(): void {
+    this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() + 1, 1);
+    this.generateCalendar();
+  }
+
+  onStaffSelectForCalendar(): void {
+    this.generateCalendar();
+  }
+
+  isToday(date: Date): boolean {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  }
+
+  getAttendanceForDate(dateStr: string): Attendance | null {
+    return this.attendanceMap.get(dateStr) || null;
+  }
+
+  onDateClick(calendarDay: any): void {
+    if (calendarDay.isEmpty || !this.selectedStaffForCalendar) return;
+    
+    const existingAttendance = this.getAttendanceForDate(calendarDay.dateStr);
+    
+    if (existingAttendance) {
+      // Edit existing attendance
+      this.editAttendance = { ...existingAttendance } as AttendanceWithStaff;
+      this.showEditAttendanceModal = true;
+    } else {
+      // Mark new attendance
+      const defaultStatus = calendarDay.isSunday ? 'week_off' : 'present';
+      this.newAttendance = {
+        staff_id: this.selectedStaffForCalendar,
+        date: calendarDay.dateStr,
+        check_in: '09:00',
+        check_out: '18:00',
+        status: defaultStatus,
+        notes: ''
+      };
+      this.showMarkAttendanceModal = true;
+    }
+  }
+
+  getMonthYearDisplay(): string {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                   'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${months[this.currentMonth.getMonth()]} ${this.currentMonth.getFullYear()}`;
   }
 }

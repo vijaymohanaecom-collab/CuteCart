@@ -219,11 +219,66 @@
 
       <!-- Payment Method -->
       <div class="payment-section" *ngIf="cart.length > 0">
-        <label class="payment-label">Payment Method:</label>
-        <select class="payment-select" [(ngModel)]="paymentMethod">
-          <option value="cash">Cash</option>
-          <option value="upi">UPI</option>
-        </select>
+        <div class="payment-header">
+          <label class="payment-label">Payment Method:</label>
+          <button 
+            class="btn-partial-payment" 
+            (click)="togglePartialPayment()"
+            [class.active]="isPartialPayment"
+          >
+            {{ isPartialPayment ? '✓ Split Payment' : '+ Split Payment' }}
+          </button>
+        </div>
+        
+        <!-- Single Payment Method -->
+        <div *ngIf="!isPartialPayment">
+          <select class="payment-select" [(ngModel)]="paymentMethod">
+            <option value="cash">Cash</option>
+            <option value="upi">UPI</option>
+          </select>
+        </div>
+        
+        <!-- Partial Payment Inputs -->
+        <div *ngIf="isPartialPayment" class="partial-payment-inputs">
+          <div class="payment-input-group">
+            <label>💵 Cash:</label>
+            <input 
+              type="number" 
+              [(ngModel)]="cashAmount" 
+              (ngModelChange)="onCashAmountChange()"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+            />
+          </div>
+          
+          <div class="payment-input-group">
+            <label>📱 UPI:</label>
+            <input 
+              type="number" 
+              [(ngModel)]="upiAmount" 
+              (ngModelChange)="onUpiAmountChange()"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+            />
+          </div>
+          
+          <div class="payment-summary">
+            <div class="payment-summary-row">
+              <span>Total Paid:</span>
+              <span [class.text-success]="isPaymentValid()" [class.text-danger]="!isPaymentValid()">
+                ₹{{ getPaymentTotal() | number:'1.2-2' }}
+              </span>
+            </div>
+            <div class="payment-summary-row" *ngIf="!isPaymentValid()">
+              <span>Difference:</span>
+              <span class="text-danger">
+                ₹{{ getPaymentDifference() | number:'1.2-2' }}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Action Buttons -->
@@ -316,7 +371,14 @@
       </div>
 
       <div class="invoice-payment-info">
-        <p><strong>Payment Method:</strong> {{ paymentMethod | titlecase }}</p>
+        <p *ngIf="!isPartialPayment"><strong>Payment Method:</strong> {{ paymentMethod | titlecase }}</p>
+        <div *ngIf="isPartialPayment">
+          <p><strong>Payment Method:</strong> Split Payment</p>
+          <div class="payment-breakdown">
+            <p *ngIf="cashAmount > 0">💵 Cash: ₹{{ cashAmount | number:'1.2-2' }}</p>
+            <p *ngIf="upiAmount > 0">📱 UPI: ₹{{ upiAmount | number:'1.2-2' }}</p>
+          </div>
+        </div>
       </div>
 
       <div class="invoice-footer" *ngIf="settings && settings.invoice_footer">

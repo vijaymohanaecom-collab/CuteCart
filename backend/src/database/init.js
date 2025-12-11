@@ -32,6 +32,9 @@ async function initialize() {
       discount REAL DEFAULT 0,
       total REAL NOT NULL,
       payment_method TEXT,
+      cash_amount REAL DEFAULT 0,
+      upi_amount REAL DEFAULT 0,
+      card_amount REAL DEFAULT 0,
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );

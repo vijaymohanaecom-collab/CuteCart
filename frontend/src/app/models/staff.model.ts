@@ -19,7 +19,7 @@ export interface Attendance {
   date: string;
   check_in: string;
   check_out?: string;
-  status: 'present' | 'absent' | 'half_day' | 'leave';
+  status: 'present' | 'absent' | 'half_day' | 'leave' | 'week_off' | 'holiday';
   notes?: string;
   created_at?: string;
   updated_at?: string;
@@ -43,8 +43,10 @@ export const STAFF_POSITIONS = [
 ];
 
 export const ATTENDANCE_STATUS = [
-  { value: 'present', label: 'Present', color: '#28a745' },
-  { value: 'absent', label: 'Absent', color: '#dc3545' },
-  { value: 'half_day', label: 'Half Day', color: '#ffc107' },
-  { value: 'leave', label: 'Leave', color: '#17a2b8' }
+  { value: 'present', label: 'Present', color: '#28a745', icon: '✓' },
+  { value: 'absent', label: 'Absent', color: '#dc3545', icon: '✗' },
+  { value: 'half_day', label: 'Half Day', color: '#ffc107', icon: '◐' },
+  { value: 'leave', label: 'Leave', color: '#17a2b8', icon: 'L' },
+  { value: 'week_off', label: 'Week Off', color: '#6c757d', icon: 'W' },
+  { value: 'holiday', label: 'Holiday', color: '#e83e8c', icon: 'H' }
 ];

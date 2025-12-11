@@ -21,6 +21,9 @@ export interface Invoice {
   discount?: number;
   total: number;
   payment_method?: string;
+  cash_amount?: number;
+  upi_amount?: number;
+  card_amount?: number;
   notes?: string;
   created_at?: string;
 }

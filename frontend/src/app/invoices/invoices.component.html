@@ -128,6 +128,7 @@
             <th>Invoice #</th>
             <th>Customer</th>
             <th>Date</th>
+            <th>Payment Type</th>
             <th>Items</th>
             <th>Total</th>
             <th>Actions</th>
@@ -138,6 +139,14 @@
             <td>{{ invoice.invoice_number }}</td>
             <td>{{ invoice.customer_name || 'Walk-in' }}</td>
             <td>{{ invoice.created_at | date:'short' }}</td>
+            <td>
+              <span *ngIf="invoice.payment_method === 'split'" style="font-size: 0.85em;">
+                💵 ₹{{ invoice.cash_amount | number:'1.0-0' }} + 📱 ₹{{ invoice.upi_amount | number:'1.0-0' }}
+              </span>
+              <span *ngIf="invoice.payment_method !== 'split'">
+                {{ invoice.payment_method | titlecase }}
+              </span>
+            </td>
             <td>{{ invoice.items.length }}</td>
             <td>₹{{ invoice.total | number:'1.2-2' }}</td>
             <td>
@@ -158,7 +167,7 @@
             </td>
           </tr>
           <tr *ngIf="filteredInvoices.length === 0">
-            <td colspan="6" class="no-results">
+            <td colspan="7" class="no-results">
               No invoices found for the selected date range
             </td>
           </tr>
@@ -241,7 +250,20 @@
       </div>
 
       <div class="invoice-payment-info">
-        <p><strong>Payment Method:</strong> {{ selectedInvoice.payment_method | titlecase }}</p>
+        <p *ngIf="selectedInvoice.payment_method !== 'split'">
+          <strong>Payment Method:</strong> {{ selectedInvoice.payment_method | titlecase }}
+        </p>
+        <div *ngIf="selectedInvoice.payment_method === 'split'">
+          <p><strong>Payment Method:</strong> Split Payment</p>
+          <div class="payment-breakdown-detail">
+            <p *ngIf="selectedInvoice.cash_amount && selectedInvoice.cash_amount > 0">
+              💵 Cash: ₹{{ selectedInvoice.cash_amount | number:'1.2-2' }}
+            </p>
+            <p *ngIf="selectedInvoice.upi_amount && selectedInvoice.upi_amount > 0">
+              📱 UPI: ₹{{ selectedInvoice.upi_amount | number:'1.2-2' }}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -272,6 +294,17 @@
     </div>
 
     <div class="form-group">
+      <label class="form-label">Invoice Total (Read-only)</label>
+      <input 
+        type="text" 
+        class="form-control" 
+        [value]="'₹' + (editInvoice.total | number:'1.2-2')"
+        readonly
+        style="background-color: #f5f5f5; cursor: not-allowed;"
+      />
+    </div>
+
+    <div class="form-group">
       <label class="form-label">Customer Name</label>
       <input 
         type="text" 
@@ -295,14 +328,64 @@
       <label class="form-label">Payment Method</label>
       <select class="form-control" [(ngModel)]="editInvoice.payment_method">
         <option value="cash">Cash</option>
-        <option value="card">Card</option>
         <option value="upi">UPI</option>
+        <option value="split">Split Payment</option>
       </select>
+    </div>
+
+    <!-- Split Payment Inputs -->
+    <div *ngIf="editInvoice.payment_method === 'split'" style="margin-top: 15px;">
+      <div class="form-group">
+        <label class="form-label">💵 Cash Amount</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          [(ngModel)]="editInvoice.cash_amount"
+          (ngModelChange)="onEditCashAmountChange()"
+          min="0"
+          step="0.01"
+          placeholder="0.00"
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">📱 UPI Amount</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          [(ngModel)]="editInvoice.upi_amount"
+          (ngModelChange)="onEditUpiAmountChange()"
+          min="0"
+          step="0.01"
+          placeholder="0.00"
+        />
+      </div>
+
+      <div class="form-group" style="padding: 10px; background-color: #f8f9fa; border-radius: 4px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+          <span>Total Paid:</span>
+          <span [style.color]="isEditPaymentValid() ? 'green' : 'red'" style="font-weight: bold;">
+            ₹{{ ((editInvoice.cash_amount || 0) + (editInvoice.upi_amount || 0)) | number:'1.2-2' }}
+          </span>
+        </div>
+        <div *ngIf="!isEditPaymentValid()" style="display: flex; justify-content: space-between; color: red;">
+          <span>Difference:</span>
+          <span style="font-weight: bold;">
+            ₹{{ (editInvoice.total - ((editInvoice.cash_amount || 0) + (editInvoice.upi_amount || 0))) | number:'1.2-2' }}
+          </span>
+        </div>
+      </div>
     </div>
 
     <div class="modal-footer">
       <button (click)="closeEditModal()" class="btn btn-secondary">Cancel</button>
-      <button (click)="saveInvoiceEdit()" class="btn btn-primary">Save Changes</button>
+      <button 
+        (click)="saveInvoiceEdit()" 
+        class="btn btn-primary"
+        [disabled]="editInvoice.payment_method === 'split' && !isEditPaymentValid()"
+      >
+        Save Changes
+      </button>
     </div>
   </div>
 </div>

@@ -27,6 +27,11 @@ export class BillingComponent implements OnInit {
   paymentMethod = 'cash';
   notes = '';
   
+  // Payment split amounts
+  cashAmount = 0;
+  upiAmount = 0;
+  isPartialPayment = false;
+  
   // Customer auto-complete
   customers: {customer_name: string, customer_phone: string}[] = [];
   filteredCustomers: {customer_name: string, customer_phone: string}[] = [];
@@ -201,6 +206,10 @@ export class BillingComponent implements OnInit {
     this.discount = 0;
     this.discountPercentage = 0;
     this.discountType = 'fixed';
+    this.paymentMethod = 'cash';
+    this.isPartialPayment = false;
+    this.cashAmount = 0;
+    this.upiAmount = 0;
     this.calculateTotals();
   }
 
@@ -235,7 +244,9 @@ export class BillingComponent implements OnInit {
       tax_amount: this.taxAmount,
       discount: this.discount,
       total: this.total,
-      payment_method: this.paymentMethod,
+      payment_method: this.isPartialPayment ? 'split' : this.paymentMethod,
+      cash_amount: this.isPartialPayment ? this.cashAmount : (this.paymentMethod === 'cash' ? this.total : 0),
+      upi_amount: this.isPartialPayment ? this.upiAmount : (this.paymentMethod === 'upi' ? this.total : 0),
       notes: this.notes,
       created_at: this.currentDate.toISOString()
     };
@@ -277,6 +288,44 @@ export class BillingComponent implements OnInit {
     this.discount = 0;
     this.discountPercentage = 0;
     this.calculateTotals();
+  }
+
+  togglePartialPayment(): void {
+    this.isPartialPayment = !this.isPartialPayment;
+    if (this.isPartialPayment) {
+      // Initialize with total amount in cash
+      this.cashAmount = this.total;
+      this.upiAmount = 0;
+    } else {
+      // Reset to single payment method
+      this.cashAmount = 0;
+      this.upiAmount = 0;
+    }
+  }
+
+  onCashAmountChange(): void {
+    // Auto-populate remaining balance in UPI
+    const remaining = this.total - (this.cashAmount || 0);
+    this.upiAmount = Math.max(0, remaining);
+  }
+
+  onUpiAmountChange(): void {
+    // Auto-populate remaining balance in cash
+    const remaining = this.total - (this.upiAmount || 0);
+    this.cashAmount = Math.max(0, remaining);
+  }
+
+  getPaymentTotal(): number {
+    return (this.cashAmount || 0) + (this.upiAmount || 0);
+  }
+
+  getPaymentDifference(): number {
+    return this.total - this.getPaymentTotal();
+  }
+
+  isPaymentValid(): boolean {
+    if (!this.isPartialPayment) return true;
+    return Math.abs(this.getPaymentDifference()) < 0.01;
   }
 
   applyDiscountPreset(percentage: number): void {

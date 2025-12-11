@@ -53,11 +53,15 @@ router.get('/:id', async (req, res) => {
 // Update invoice (customer info and payment method only)
 router.put('/:id', async (req, res) => {
   try {
-    const { customer_name, customer_phone, payment_method } = req.body;
+    const { customer_name, customer_phone, payment_method, cash_amount, upi_amount } = req.body;
+    
+    // Default values for payment amounts
+    const cashAmt = cash_amount !== undefined ? cash_amount : 0;
+    const upiAmt = upi_amount !== undefined ? upi_amount : 0;
     
     await dbRun(
-      'UPDATE invoices SET customer_name = ?, customer_phone = ?, payment_method = ? WHERE id = ?',
-      [customer_name || '', customer_phone || '', payment_method || 'cash', req.params.id]
+      'UPDATE invoices SET customer_name = ?, customer_phone = ?, payment_method = ?, cash_amount = ?, upi_amount = ?, card_amount = 0 WHERE id = ?',
+      [customer_name || '', customer_phone || '', payment_method || 'cash', cashAmt, upiAmt, req.params.id]
     );
     
     const invoice = await dbGet('SELECT * FROM invoices WHERE id = ?', [req.params.id]);
@@ -77,7 +81,7 @@ router.put('/:id', async (req, res) => {
 // Create invoice
 router.post('/', async (req, res) => {
   try {
-    const { customer_name, customer_phone, items, subtotal, tax_rate, tax_amount, discount, total, payment_method, notes, created_at } = req.body;
+    const { customer_name, customer_phone, items, subtotal, tax_rate, tax_amount, discount, total, payment_method, cash_amount, upi_amount, card_amount, notes, created_at } = req.body;
     
     // Generate invoice number
     const settings = await dbGet('SELECT invoice_prefix FROM settings LIMIT 1');
@@ -95,10 +99,15 @@ router.post('/', async (req, res) => {
     // Use provided timestamp or current time
     const timestamp = created_at || new Date().toISOString();
     
+    // Calculate payment amounts
+    const cashAmt = cash_amount || 0;
+    const upiAmt = upi_amount || 0;
+    const cardAmt = card_amount || 0;
+    
     // Insert invoice
     const invoiceResult = await dbRun(
-      'INSERT INTO invoices (invoice_number, customer_name, customer_phone, subtotal, tax_rate, tax_amount, discount, total, payment_method, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [invoiceNumber, customer_name || '', customer_phone || '', subtotal, tax_rate, tax_amount, discount || 0, total, payment_method, notes || '', timestamp]
+      'INSERT INTO invoices (invoice_number, customer_name, customer_phone, subtotal, tax_rate, tax_amount, discount, total, payment_method, cash_amount, upi_amount, card_amount, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [invoiceNumber, customer_name || '', customer_phone || '', subtotal, tax_rate, tax_amount, discount || 0, total, payment_method, cashAmt, upiAmt, cardAmt, notes || '', timestamp]
     );
     
     const invoiceId = invoiceResult.id;

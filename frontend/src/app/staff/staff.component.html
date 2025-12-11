@@ -123,86 +123,164 @@
   <div *ngIf="activeTab === 'attendance'">
     <div class="card">
       <div class="card-header">
-        <h2 class="card-title">Attendance Records</h2>
+        <h2 class="card-title">Attendance Tracking</h2>
         <div class="header-actions">
-          <button (click)="openBulkAttendanceModal()" class="btn btn-success" *ngIf="isManager">
+          <button (click)="toggleView()" class="btn btn-info">
+            {{ calendarView ? '📋 List View' : '📅 Calendar View' }}
+          </button>
+          <button (click)="openBulkAttendanceModal()" class="btn btn-success" *ngIf="isManager && !calendarView">
             📝 Bulk Mark
           </button>
-          <button (click)="openMarkAttendanceModal()" class="btn btn-primary" *ngIf="isManager">
+          <button (click)="openMarkAttendanceModal()" class="btn btn-primary" *ngIf="isManager && !calendarView">
             ➕ Mark Attendance
           </button>
         </div>
       </div>
 
-      <!-- Filter Section -->
-      <div class="filters-section">
-        <div class="filter-row">
-          <div class="filter-group">
-            <label class="filter-label">📅 Date</label>
-            <input 
-              type="date" 
-              class="filter-input" 
-              [(ngModel)]="attendanceDateFilter" 
-              (ngModelChange)="onAttendanceFilterChange()"
-            />
-          </div>
-
-          <div class="filter-group">
-            <label class="filter-label">👤 Staff Member</label>
+      <!-- CALENDAR VIEW -->
+      <div *ngIf="calendarView" class="calendar-container">
+        <!-- Staff Selector -->
+        <div class="calendar-controls">
+          <div class="staff-selector">
+            <label class="filter-label">👤 Select Staff Member:</label>
             <select 
               class="filter-select" 
-              [(ngModel)]="attendanceStaffFilter" 
-              (ngModelChange)="onAttendanceFilterChange()"
+              [(ngModel)]="selectedStaffForCalendar" 
+              (ngModelChange)="onStaffSelectForCalendar()"
             >
-              <option [ngValue]="null">All Staff</option>
-              <option *ngFor="let staff of staffList" [ngValue]="staff.id">{{ staff.name }}</option>
+              <option [ngValue]="null">-- Select Staff --</option>
+              <option *ngFor="let staff of staffList" [ngValue]="staff.id">
+                {{ staff.name }} - {{ staff.position }}
+              </option>
             </select>
+          </div>
+          
+          <div class="month-navigation" *ngIf="selectedStaffForCalendar">
+            <button class="btn btn-sm btn-secondary" (click)="previousMonth()">◀ Previous</button>
+            <h3 class="month-display">{{ getMonthYearDisplay() }}</h3>
+            <button class="btn btn-sm btn-secondary" (click)="nextMonth()">Next ▶</button>
           </div>
         </div>
 
-        <div class="filter-results">
-          Showing <strong>{{ attendanceRecords.length }}</strong> attendance records
+        <!-- Legend -->
+        <div class="calendar-legend" *ngIf="selectedStaffForCalendar">
+          <div class="legend-item" *ngFor="let status of attendanceStatuses">
+            <span class="legend-color" [style.background-color]="status.color">{{ status.icon }}</span>
+            <span class="legend-label">{{ status.label }}</span>
+          </div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="calendar-grid" *ngIf="selectedStaffForCalendar">
+          <div class="calendar-header">
+            <div class="calendar-day-name">Sun</div>
+            <div class="calendar-day-name">Mon</div>
+            <div class="calendar-day-name">Tue</div>
+            <div class="calendar-day-name">Wed</div>
+            <div class="calendar-day-name">Thu</div>
+            <div class="calendar-day-name">Fri</div>
+            <div class="calendar-day-name">Sat</div>
+          </div>
+          
+          <div class="calendar-body">
+            <div 
+              *ngFor="let calendarDay of calendarDays" 
+              class="calendar-cell"
+              [class.empty-cell]="calendarDay.isEmpty"
+              [class.today]="calendarDay.isToday"
+              [class.sunday]="calendarDay.isSunday"
+              [class.clickable]="!calendarDay.isEmpty && isManager"
+              [style.background-color]="!calendarDay.isEmpty && getAttendanceForDate(calendarDay.dateStr) ? getStatusColor(getAttendanceForDate(calendarDay.dateStr)!.status) : ''"
+              (click)="isManager && onDateClick(calendarDay)"
+            >
+              <div class="cell-content" *ngIf="!calendarDay.isEmpty">
+                <div class="day-number">{{ calendarDay.day }}</div>
+                <div class="status-icon" *ngIf="getAttendanceForDate(calendarDay.dateStr) as attendance">
+                  {{ getStatusIcon(attendance.status) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- No staff selected message -->
+        <div class="no-staff-selected" *ngIf="!selectedStaffForCalendar">
+          <p>👤 Please select a staff member to view their attendance calendar</p>
         </div>
       </div>
 
-      <!-- Attendance Table -->
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Staff Name</th>
-              <th>Position</th>
-              <th>Check In</th>
-              <th>Check Out</th>
-              <th>Status</th>
-              <th *ngIf="isManager">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let record of attendanceRecords">
-              <td>{{ record.date | date:'dd MMM yyyy' }}</td>
-              <td>{{ record.staff_name }}</td>
-              <td>{{ record.staff_position }}</td>
-              <td>{{ record.check_in }}</td>
-              <td>{{ record.check_out || '-' }}</td>
-              <td>
-                <span class="attendance-badge" [style.background-color]="getStatusColor(record.status)">
-                  {{ getStatusLabel(record.status) }}
-                </span>
-              </td>
-              <td *ngIf="isManager">
-                <button (click)="openEditAttendanceModal(record)" class="btn btn-sm btn-warning action-btn">Edit</button>
-                <button (click)="deleteAttendance(record)" class="btn btn-sm btn-danger action-btn">Delete</button>
-              </td>
-            </tr>
-            <tr *ngIf="attendanceRecords.length === 0">
-              <td [attr.colspan]="isManager ? 7 : 6" class="no-results">
-                No attendance records found for the selected filters
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- LIST VIEW -->
+      <div *ngIf="!calendarView">
+        <!-- Filter Section -->
+        <div class="filters-section">
+          <div class="filter-row">
+            <div class="filter-group">
+              <label class="filter-label">📅 Date</label>
+              <input 
+                type="date" 
+                class="filter-input" 
+                [(ngModel)]="attendanceDateFilter" 
+                (ngModelChange)="onAttendanceFilterChange()"
+              />
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label">👤 Staff Member</label>
+              <select 
+                class="filter-select" 
+                [(ngModel)]="attendanceStaffFilter" 
+                (ngModelChange)="onAttendanceFilterChange()"
+              >
+                <option [ngValue]="null">All Staff</option>
+                <option *ngFor="let staff of staffList" [ngValue]="staff.id">{{ staff.name }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-results">
+            Showing <strong>{{ attendanceRecords.length }}</strong> attendance records
+          </div>
+        </div>
+
+        <!-- Attendance Table -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Staff Name</th>
+                <th>Position</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Status</th>
+                <th *ngIf="isManager">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let record of attendanceRecords">
+                <td>{{ record.date | date:'dd MMM yyyy' }}</td>
+                <td>{{ record.staff_name }}</td>
+                <td>{{ record.staff_position }}</td>
+                <td>{{ record.check_in }}</td>
+                <td>{{ record.check_out || '-' }}</td>
+                <td>
+                  <span class="attendance-badge" [style.background-color]="getStatusColor(record.status)">
+                    {{ getStatusLabel(record.status) }}
+                  </span>
+                </td>
+                <td *ngIf="isManager">
+                  <button (click)="openEditAttendanceModal(record)" class="btn btn-sm btn-warning action-btn">Edit</button>
+                  <button (click)="deleteAttendance(record)" class="btn btn-sm btn-danger action-btn">Delete</button>
+                </td>
+              </tr>
+              <tr *ngIf="attendanceRecords.length === 0">
+                <td [attr.colspan]="isManager ? 7 : 6" class="no-results">
+                  No attendance records found for the selected filters
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

@@ -536,12 +536,40 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.payment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 .payment-label {
   display: block;
-  margin-bottom: 8px;
   font-size: 13px;
   font-weight: 600;
   color: #333;
+  margin: 0;
+}
+
+.btn-partial-payment {
+  padding: 6px 12px;
+  border: 1px solid #4a90e2;
+  background: white;
+  color: #4a90e2;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-partial-payment:hover {
+  background: #f0f7ff;
+}
+
+.btn-partial-payment.active {
+  background: #4a90e2;
+  color: white;
 }
 
 .payment-select {
@@ -558,6 +586,69 @@
   outline: none;
   border-color: #4a90e2;
   background: white;
+}
+
+/* Partial Payment Inputs */
+.partial-payment-inputs {
+  margin-top: 12px;
+}
+
+.payment-input-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.payment-input-group label {
+  flex: 0 0 80px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+}
+
+.payment-input-group input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  background: #fafafa;
+}
+
+.payment-input-group input:focus {
+  outline: none;
+  border-color: #4a90e2;
+  background: white;
+}
+
+.payment-summary {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+}
+
+.payment-summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.payment-summary-row span:first-child {
+  color: #666;
+  font-weight: 500;
+}
+
+.payment-summary-row span:last-child {
+  font-weight: 600;
+}
+
+.text-success {
+  color: #28a745;
+}
+
+.text-danger {
+  color: #dc3545;
 }
 
 /* Cart Actions */

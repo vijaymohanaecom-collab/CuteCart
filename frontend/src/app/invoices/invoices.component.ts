@@ -235,17 +235,20 @@ export class InvoicesComponent implements OnInit {
     this.stats.otherAmount = 0;
 
     this.filteredInvoices.forEach(invoice => {
-      const amount = invoice.total || 0;
       const paymentMethod = (invoice.payment_method || 'cash').toLowerCase();
 
-      if (paymentMethod === 'cash') {
-        this.stats.cashAmount += amount;
+      if (paymentMethod === 'split') {
+        // For split payments, add to respective buckets based on actual amounts
+        this.stats.cashAmount += invoice.cash_amount || 0;
+        this.stats.upiAmount += invoice.upi_amount || 0;
+      } else if (paymentMethod === 'cash') {
+        this.stats.cashAmount += invoice.cash_amount || invoice.total || 0;
       } else if (paymentMethod === 'upi') {
-        this.stats.upiAmount += amount;
+        this.stats.upiAmount += invoice.upi_amount || invoice.total || 0;
       } else if (paymentMethod === 'card') {
-        this.stats.cardAmount += amount;
+        this.stats.cardAmount += invoice.total || 0;
       } else {
-        this.stats.otherAmount += amount;
+        this.stats.otherAmount += invoice.total || 0;
       }
     });
   }
@@ -271,7 +274,7 @@ export class InvoicesComponent implements OnInit {
   }
 
   openEditModal(invoice: Invoice): void {
-    this.editInvoice = { ...invoice };
+    this.editInvoice = { ...invoice, items: [...invoice.items] };
     this.showEditModal = true;
   }
 
@@ -280,14 +283,50 @@ export class InvoicesComponent implements OnInit {
     this.editInvoice = null;
   }
 
+  onEditCashAmountChange(): void {
+    if (!this.editInvoice) return;
+    // Auto-populate remaining balance in UPI
+    const remaining = this.editInvoice.total - (this.editInvoice.cash_amount || 0);
+    this.editInvoice.upi_amount = Math.max(0, remaining);
+  }
+
+  onEditUpiAmountChange(): void {
+    if (!this.editInvoice) return;
+    // Auto-populate remaining balance in cash
+    const remaining = this.editInvoice.total - (this.editInvoice.upi_amount || 0);
+    this.editInvoice.cash_amount = Math.max(0, remaining);
+  }
+
+  isEditPaymentValid(): boolean {
+    if (!this.editInvoice) return false;
+    if (this.editInvoice.payment_method !== 'split') return true;
+    const total = (this.editInvoice.cash_amount || 0) + (this.editInvoice.upi_amount || 0);
+    return Math.abs(this.editInvoice.total - total) < 0.01;
+  }
+
   saveInvoiceEdit(): void {
     if (!this.editInvoice || !this.editInvoice.id) return;
 
-    const updateData = {
+    if (this.editInvoice.payment_method === 'split' && !this.isEditPaymentValid()) {
+      alert('Split payment amounts must equal the invoice total.');
+      return;
+    }
+
+    const updateData: any = {
       customer_name: this.editInvoice.customer_name,
       customer_phone: this.editInvoice.customer_phone,
       payment_method: this.editInvoice.payment_method
     };
+
+    // Include payment split amounts if payment method is split
+    if (this.editInvoice.payment_method === 'split') {
+      updateData.cash_amount = this.editInvoice.cash_amount || 0;
+      updateData.upi_amount = this.editInvoice.upi_amount || 0;
+    } else {
+      // Set amounts based on single payment method
+      updateData.cash_amount = this.editInvoice.payment_method === 'cash' ? this.editInvoice.total : 0;
+      updateData.upi_amount = this.editInvoice.payment_method === 'upi' ? this.editInvoice.total : 0;
+    }
 
     this.apiService.updateInvoice(this.editInvoice.id, updateData).subscribe({
       next: () => {
