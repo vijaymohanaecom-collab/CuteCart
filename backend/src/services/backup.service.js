@@ -17,24 +17,31 @@ class BackupService {
 
   /**
    * Initialize Google Drive client
-   * Requires GOOGLE_DRIVE_CREDENTIALS environment variable with service account JSON
+   * Requires OAuth 2.0 credentials (client_id, client_secret, refresh_token)
    */
   async initializeDrive() {
     try {
-      const credentials = process.env.GOOGLE_DRIVE_CREDENTIALS;
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+      const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
       const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
 
-      if (!credentials) {
-        console.log('Google Drive credentials not configured. Backups will be stored locally only.');
+      if (!clientId || !clientSecret || !refreshToken) {
+        console.log('Google Drive OAuth credentials not configured. Backups will be stored locally only.');
         return false;
       }
 
-      const auth = new google.auth.GoogleAuth({
-        credentials: JSON.parse(credentials),
-        scopes: ['https://www.googleapis.com/auth/drive.file'],
+      const oauth2Client = new google.auth.OAuth2(
+        clientId,
+        clientSecret,
+        'http://localhost:3001/oauth2callback'
+      );
+
+      oauth2Client.setCredentials({
+        refresh_token: refreshToken
       });
 
-      this.driveClient = google.drive({ version: 'v3', auth });
+      this.driveClient = google.drive({ version: 'v3', auth: oauth2Client });
       this.driveFolderId = folderId || 'root';
       
       console.log('✓ Google Drive initialized successfully');

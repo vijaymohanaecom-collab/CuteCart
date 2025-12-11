@@ -1,6 +1,0 @@
-ID,Name,Description,Price,Purchase Price,Stock,Category,Barcode
-201,Test Product 1,Basic test product,49.99,25.00,150,Electronics,TEST001
-202,Test Product 2,Another test item,89.99,45.00,75,Accessories,TEST002
-203,"Product with ""Quotes""",Testing special characters,129.99,65.00,50,Home & Garden,TEST003
-204,Product with Comma,"Description, with comma",199.99,100.00,30,Kitchen,TEST004
-,New Product Without ID,This should auto-generate ID,299.99,150.00,20,Furniture,TEST005

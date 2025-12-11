@@ -6,6 +6,7 @@
     "start": "ng serve --port 4201",
     "start:prod": "ng serve --configuration network --host 0.0.0.0 --port 4200",
     "start:network": "ng serve --configuration network --host 0.0.0.0",
+    "serve:prod": "serve -s dist/frontend/browser -l 4200 --no-port-switching --no-clipboard",
     "build": "ng build",
     "build:network": "ng build --configuration network",
     "build:prod": "ng build --configuration production",
@@ -43,7 +44,9 @@
     "@angular/build": "^21.0.1",
     "@angular/cli": "^21.0.1",
     "@angular/compiler-cli": "^21.0.0",
+    "http-server": "^14.1.1",
     "jsdom": "^27.1.0",
+    "serve": "^14.2.4",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"
   }

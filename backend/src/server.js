@@ -43,9 +43,20 @@ const backupService = require('./services/backup.service');
 const { scheduleBackups } = require('./jobs/backup.job');
 
 // Initialize Google Drive (if configured)
-backupService.initializeDrive().then(() => {
+backupService.initializeDrive().then(async () => {
   // Schedule automatic backups
   scheduleBackups();
+  
+  // Create backup on startup (if enabled)
+  if (process.env.BACKUP_ON_STARTUP === 'true') {
+    try {
+      console.log('Creating startup backup...');
+      const backupInfo = await backupService.createBackup();
+      console.log(`✓ Startup backup created: ${backupInfo.filename}`);
+    } catch (error) {
+      console.error('Failed to create startup backup:', error.message);
+    }
+  }
 });
 
 // Routes
@@ -65,7 +76,52 @@ app.get('/api/health', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✓ Server running on http://0.0.0.0:${PORT}`);
   console.log(`✓ Access from network: http://<your-ip>:${PORT}`);
 });
+
+// Graceful shutdown handler
+async function gracefulShutdown(signal) {
+  console.log(`\n${signal} received.`);
+  
+  // Create backup on shutdown (if enabled)
+  if (process.env.BACKUP_ON_SHUTDOWN === 'true') {
+    console.log('Creating shutdown backup...');
+    try {
+      const backupInfo = await backupService.createBackup();
+      console.log(`✓ Shutdown backup created: ${backupInfo.filename}`);
+    } catch (error) {
+      console.error('Failed to create shutdown backup:', error.message);
+    }
+  }
+  
+  console.log('Closing server...');
+  server.close(() => {
+    console.log('✓ Server closed');
+    process.exit(0);
+  });
+  
+  // Force close after 10 seconds
+  setTimeout(() => {
+    console.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+}
+
+// Handle shutdown signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle Windows Ctrl+C
+if (process.platform === 'win32') {
+  const readline = require('readline');
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+  
+  rl.on('SIGINT', () => {
+    process.emit('SIGINT');
+  });
+}

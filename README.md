@@ -1,294 +1,96 @@
-# 🛒 CuteCart - Modern POS System
+# CuteCart POS System
 
-A full-stack Point of Sale (POS) system built with Angular and Node.js, designed for retail stores and small businesses.
+A modern Point of Sale (POS) system built with Angular and Node.js, designed for small to medium-sized retail businesses.
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+## Features
 
-## ✨ Features
+- Product Management - Add, edit, and manage products with categories
+- Billing System - Create invoices with barcode scanning support
+- Customer Management - Track customer information and purchase history
+- Inventory Tracking - Monitor stock levels and low stock alerts
+- Sales Analytics - View sales statistics and reports with charts
+- User Management - Role-based access control (Admin, Manager, Cashier)
+- Backup System - Automated backups with Google Drive integration
+- Responsive Design - Works on desktop, tablet, and mobile devices
 
-### 📊 Dashboard
-- Real-time sales statistics
-- Revenue tracking
-- Low stock alerts
-- Recent transactions overview
+## Quick Start
 
-### 🛍️ Billing & Sales
-- Fast product search with barcode support
-- Multiple payment methods (Cash, Card, UPI)
-- Tax calculation
-- Discount management
-- Invoice generation and preview
-- Print-ready invoices
+### Prerequisites
+- Node.js (v18+)
+- npm (v11+)
 
-### 📦 Product Management
-- CRUD operations for products
-- CSV import/export functionality
-- Category management
-- Stock tracking
-- Purchase price and selling price
-- Barcode support
+### Installation & Running
 
-### 🧾 Invoice Management
-- View all invoices
-- Edit customer information and payment method
-- Invoice search and filtering
-- Print invoices
-- Invoice statistics
+1. **Clone and install**
+   ```bash
+   git clone <repository-url>
+   cd CuteCart-dev
+   cd backend && npm install
+   cd ../frontend && npm install
+   ```
 
-### 👥 User Management
-- Role-based access control (Admin, Manager, Sales)
-- User authentication with JWT
-- Session management with auto-logout
-- Password reset functionality
+2. **Start the application**
+   ```bash
+   # Production mode (recommended)
+   start-cutecart.bat
+   
+   # Development mode (with hot-reload)
+   start-dev.bat
+   ```
 
-### ⚙️ Settings
-- Store information management
-- Tax rate configuration
-- Invoice customization
-- Database backup
-- Currency settings
+3. **Access the application**
+   - Production: http://localhost:4200
+   - Development: http://localhost:4201
+   - Default login: `admin` / `admin123`
 
-## 🚀 Tech Stack
+## Documentation
 
-### Frontend
-- **Framework**: Angular 18
-- **Language**: TypeScript
-- **Styling**: CSS3
-- **HTTP Client**: Angular HttpClient
-- **State Management**: RxJS
+- **[Setup Guide](SETUP.md)** - Detailed installation and configuration
+- **[LAN Deployment](LAN_DEPLOYMENT_GUIDE.md)** - Network deployment guide
+- **[Google Drive Backup](GOOGLE_DRIVE_BACKUP_SETUP.md)** - Cloud backup setup
+- **[CSV Import/Export](CSV_IMPORT_EXPORT_GUIDE.md)** - Product data management
+- **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
 
-### Backend
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: SQLite3
-- **Authentication**: JWT (jsonwebtoken)
-- **Password Hashing**: bcryptjs
-- **CORS**: cors middleware
+## Tech Stack
 
-## 📋 Prerequisites
+**Frontend:** Angular 21, TypeScript, Chart.js  
+**Backend:** Node.js, Express, SQLite, JWT  
+**Tools:** Google Drive API, HTML2Canvas, jsPDF
 
-- Node.js (v18 or higher)
-- npm (v9 or higher)
-- Git
-
-## 🔧 Installation
-
-### Quick Start (Local Development)
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/vijaymohanaecom-collab/CuteCart.git
-cd CuteCart
-```
-
-### 2. Backend Setup
-
-```bash
-cd backend
-npm install
-npm run init-db
-npm start
-```
-
-The backend server will start on `http://localhost:3000`
-
-### 3. Frontend Setup
-
-Open a new terminal:
-
-```bash
-cd frontend
-npm install
-npm start
-```
-
-The frontend will start on `http://localhost:4200`
-
----
-
-### 🌐 LAN Deployment (Access from Mobile/Other Devices)
-
-To access CuteCart from mobile devices or other computers on your network:
-
-**Quick Setup:**
-```bash
-deploy-lan.bat
-```
-
-**See detailed guide:** [LAN_DEPLOYMENT_GUIDE.md](LAN_DEPLOYMENT_GUIDE.md)
-
-**Quick reference:** [QUICK_LAN_SETUP.md](QUICK_LAN_SETUP.md)
-
-## 🔐 Default Credentials
-
-After database initialization, use these credentials:
-
-| Role    | Username | Password    |
-|---------|----------|-------------|
-| Admin   | admin    | admin123    |
-| Manager | Manager  | manager123  |
-| Sales   | Sales    | sales123    |
-
-**⚠️ Important**: Change these passwords in production!
-
-## 📁 Project Structure
+## Project Structure
 
 ```
-CuteCart/
-├── frontend/                 # Angular frontend
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── billing/     # Billing component
-│   │   │   ├── dashboard/   # Dashboard component
-│   │   │   ├── invoices/    # Invoice management
-│   │   │   ├── products/    # Product management
-│   │   │   ├── users/       # User management
-│   │   │   ├── settings/    # Settings component
-│   │   │   ├── services/    # API services
-│   │   │   ├── guards/      # Route guards
-│   │   │   └── models/      # TypeScript models
-│   │   └── environments/    # Environment configs
-│   └── package.json
-│
-├── backend/                  # Express backend
-│   ├── src/
-│   │   ├── routes/          # API routes
-│   │   ├── middleware/      # Auth middleware
-│   │   ├── config/          # Database config
-│   │   ├── database/        # DB initialization
-│   │   └── server.js        # Main server file
-│   └── package.json
-│
-├── .gitignore
-├── README.md
-├── CHANGELOG.md
-├── TROUBLESHOOTING.md
-└── CSV_IMPORT_EXPORT_GUIDE.md
+CuteCart-dev/
+├── backend/              # Node.js/Express API
+│   ├── src/             # Source code
+│   ├── .env             # Configuration
+│   └── database.db      # SQLite database
+├── frontend/            # Angular application
+│   ├── src/            # Source code
+│   └── dist/           # Production build
+├── start-cutecart.bat  # Production startup
+└── start-dev.bat       # Development startup
 ```
 
-## 🔌 API Endpoints
+## Configuration
 
-### Authentication
-- `POST /api/auth/login` - User login
-- `POST /api/auth/reset-password` - Password reset
-
-### Products
-- `GET /api/products` - Get all products
-- `POST /api/products` - Create product
-- `PUT /api/products/:id` - Update product
-- `DELETE /api/products/:id` - Delete product
-- `GET /api/products/export/csv` - Export to CSV
-- `POST /api/products/import/csv` - Import from CSV
-
-### Invoices
-- `GET /api/invoices` - Get all invoices
-- `POST /api/invoices` - Create invoice
-- `PUT /api/invoices/:id` - Update invoice
-- `GET /api/invoices/stats/summary` - Get statistics
-
-### Users
-- `GET /api/users` - Get all users
-- `POST /api/users` - Create user
-- `PUT /api/users/:id` - Update user
-- `DELETE /api/users/:id` - Delete user
-
-### Settings
-- `GET /api/settings` - Get settings
-- `PUT /api/settings` - Update settings
-- `GET /api/settings/backup` - Backup database
-
-## 📊 CSV Import/Export
-
-### CSV Format
-```csv
-ID,Name,Description,Price,Purchase Price,Stock,Category,Barcode
-101,Product 1,Description here,99.99,50.00,100,Electronics,1234567890
+### Backend (.env)
+```env
+PORT=3000
+JWT_SECRET=your-secret-key
+AUTO_BACKUP_ENABLED=true
+BACKUP_SCHEDULE=0 2 * * *
 ```
 
-See [CSV_IMPORT_EXPORT_GUIDE.md](CSV_IMPORT_EXPORT_GUIDE.md) for detailed instructions.
+### Startup Scripts
+- `start-cutecart.bat` - Production mode (ports 3000/4200)
+- `start-prod.bat` - Same as above
+- `start-dev.bat` - Development mode (ports 3001/4201)
 
-## 🐛 Troubleshooting
+## License
 
-Common issues and solutions are documented in [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+MIT License - see [LICENSE](LICENSE) file for details
 
-### Quick Fixes
+## Support
 
-**Backend not starting?**
-```bash
-cd backend
-npm install
-npm run init-db
-```
-
-**Frontend errors?**
-```bash
-cd frontend
-rm -rf node_modules
-npm install
-```
-
-**CORS errors?**
-- Ensure backend is running on port 3000
-- Check `frontend/src/environments/environment.ts`
-
-## 🔒 Security Features
-
-- JWT-based authentication
-- Password hashing with bcrypt
-- Protected API routes
-- Role-based access control
-- Session timeout (3 hours)
-- CORS protection
-- SQL injection prevention
-
-## 🎨 Screenshots
-
-*(Add screenshots of your application here)*
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 👨‍💻 Author
-
-**Your Name**
-- GitHub: [@vijaymohanaecom-collab](https://github.com/YOUR_USERNAME)
-- Email: vijaymohanaecom@gmail.com
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📞 Support
-
-For support, email your.email@example.com or open an issue on GitHub.
-
-## 🗺️ Roadmap
-
-- [ ] Multi-store support
-- [ ] Advanced reporting and analytics
-- [ ] Mobile app
-- [ ] Inventory management
-- [ ] Supplier management
-- [ ] Customer loyalty program
-- [ ] Email notifications
-- [ ] Cloud backup
-
-## 🙏 Acknowledgments
-
-- Angular Team
-- Express.js Team
-- SQLite Team
-- All contributors
-
----
-
-**Made with ❤️ for small businesses**
+For issues and questions, please create an issue in the repository.
