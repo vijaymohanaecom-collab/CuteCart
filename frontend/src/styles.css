@@ -653,13 +653,53 @@ nav {
     background: white;
   }
   
-  nav, .btn, .modal-close {
+  /* Hide everything except invoice content */
+  nav, .btn, .modal-close, .modal-footer, .modal-overlay, 
+  .card-header, .stats-grid, .payment-breakdown, .filters-section,
+  .table-container, .container > .card {
+    display: none !important;
+  }
+  
+  /* Show only the modal content when printing */
+  .modal-overlay {
+    position: static !important;
+    background: none !important;
+  }
+  
+  .modal {
+    box-shadow: none !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  .modal-header {
     display: none !important;
   }
   
   .invoice-content {
     box-shadow: none;
-    padding: 0;
+    padding: 20px;
+    page-break-after: avoid;
+  }
+  
+  /* Prevent page breaks inside invoice elements */
+  .invoice-company-header,
+  .invoice-title-section,
+  .invoice-bill-to,
+  .invoice-table-container,
+  .invoice-totals-section,
+  .invoice-payment-info,
+  .invoice-footer {
+    page-break-inside: avoid;
+  }
+  
+  /* Ensure single page print */
+  @page {
+    margin: 1cm;
+    size: A4;
   }
 }
 

@@ -168,6 +168,10 @@ export class BillingComponent implements OnInit {
       });
     }
     this.calculateTotals();
+    
+    // Clear search box after adding item to cart
+    this.searchTerm = '';
+    this.filteredProducts = this.products;
   }
 
   updateQuantity(item: InvoiceItem, quantity: number): void {

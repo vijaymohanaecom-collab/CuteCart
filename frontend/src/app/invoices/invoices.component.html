@@ -187,12 +187,11 @@
 
     <div class="invoice-content">
       <div class="invoice-company-header">
-        <h1>CuteCart</h1>
-        <p>No. 4/204, Opp: NRS Complex (Apollo Pharmacy), Nookampalayam Road</p>
-        <p>Perumbakkam Chennai - 600100</p>
-        <p>Phone: 9003498836</p>
-        <p>Email: vijaymahasecom@gmail.com</p>
-        <p>Website: www.cutecart.in</p>
+        <h1>{{ storeSettings?.store_name || 'CuteCart' }}</h1>
+        <p *ngIf="storeSettings?.store_address">{{ storeSettings?.store_address }}</p>
+        <p *ngIf="storeSettings?.store_phone">Phone: {{ storeSettings?.store_phone }}</p>
+        <p *ngIf="storeSettings?.store_email">Email: {{ storeSettings?.store_email }}</p>
+        <p *ngIf="storeSettings?.store_website">Website: {{ storeSettings?.store_website }}</p>
       </div>
 
       <div class="invoice-title-section">
@@ -264,6 +263,10 @@
             </p>
           </div>
         </div>
+      </div>
+
+      <div class="invoice-footer" *ngIf="storeSettings?.invoice_footer">
+        <p>{{ storeSettings?.invoice_footer }}</p>
       </div>
     </div>
 

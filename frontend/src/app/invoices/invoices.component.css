@@ -313,6 +313,7 @@
 .invoice-company-header p {
   margin: 2px 0;
   font-size: 12px;
+  white-space: pre-line;
 }
 
 .invoice-title-section {
@@ -392,4 +393,68 @@
   text-align: center;
   font-size: 10px;
   color: #666;
+}
+
+/* Print-specific styles for invoice modal */
+@media print {
+  /* Hide everything except the invoice content */
+  body * {
+    visibility: hidden;
+  }
+  
+  .modal-overlay,
+  .modal-overlay * {
+    visibility: visible;
+  }
+  
+  .modal-overlay {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    background: white !important;
+    display: block !important;
+  }
+  
+  .modal {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+  
+  .modal-header,
+  .modal-footer {
+    display: none !important;
+  }
+  
+  .invoice-content {
+    padding: 10mm !important;
+    page-break-after: avoid !important;
+  }
+  
+  /* Prevent page breaks inside important sections */
+  .invoice-company-header,
+  .invoice-title-section,
+  .invoice-bill-to,
+  .invoice-table,
+  .invoice-totals-section,
+  .invoice-payment-info,
+  .invoice-footer {
+    page-break-inside: avoid !important;
+  }
+  
+  /* Ensure proper page setup */
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
 }

@@ -24,8 +24,14 @@ export class PdfInvoiceService {
     doc.setFont('helvetica', 'normal');
     
     if (storeSettings?.store_address) {
-      doc.text(storeSettings.store_address, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 5;
+      // Split address by newlines and render each line separately
+      const addressLines = storeSettings.store_address.split('\n');
+      addressLines.forEach((line: string) => {
+        if (line.trim()) {
+          doc.text(line.trim(), pageWidth / 2, yPos, { align: 'center' });
+          yPos += 5;
+        }
+      });
     }
     
     if (storeSettings?.store_phone) {
@@ -204,36 +210,28 @@ export class PdfInvoiceService {
       phoneNumber = '91' + phoneNumber;
     }
 
-    // Create message
-    const message = `Hi ${invoice.customer_name || 'Customer'},\n\nThank you for your purchase!\n\nInvoice #${invoice.invoice_number}\nTotal: ₹${invoice.total.toFixed(2)}\n\nPlease find your invoice attached.\n\nThank you for your business! 🙏\n\n- CuteCart`;
+    // Create message - simplified for better compatibility
+    const storeName = storeSettings?.store_name || 'CuteCart';
+    const message = `Hi ${invoice.customer_name || 'Customer'},
+
+Thank you for your purchase!
+
+Invoice: ${invoice.invoice_number}
+Total: Rs ${invoice.total.toFixed(2)}
+
+${storeName}`;
     
-    const encodedMessage = encodeURIComponent(message);
-    
-    // For mobile devices, try to use the share API with the PDF
-    if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      try {
-        const file = new File([pdfBlob], `Invoice-${invoice.invoice_number}.pdf`, { type: 'application/pdf' });
-        await navigator.share({
-          title: `Invoice ${invoice.invoice_number}`,
-          text: message,
-          files: [file]
-        });
-        return;
-      } catch (err) {
-        console.log('Share API failed, falling back to WhatsApp Web');
-      }
-    }
-    
-    // Fallback: Download PDF and open WhatsApp with message
+    // Download PDF first
     this.downloadPDF(pdfBlob, `Invoice-${invoice.invoice_number}.pdf`);
     
-    // Open WhatsApp with message (PDF needs to be manually attached)
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-    window.open(whatsappUrl, '_blank');
+    // Wait a moment for download to start
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Show instruction to user
-    setTimeout(() => {
-      alert('PDF downloaded! Please attach it manually in WhatsApp.');
-    }, 500);
+    // Open WhatsApp with pre-filled message and contact
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+    
+    // Try to open in new window
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   }
 }
