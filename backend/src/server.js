@@ -69,6 +69,7 @@ app.use('/api/expenses', authenticateToken, require('./routes/expenses'));
 app.use('/api/staff', authenticateToken, require('./routes/staff'));
 app.use('/api/attendance', authenticateToken, require('./routes/attendance'));
 app.use('/api/backup', authenticateToken, require('./routes/backup'));
+app.use('/api/reports', authenticateToken, require('./routes/reports'));
 
 // Health check
 app.get('/api/health', (req, res) => {

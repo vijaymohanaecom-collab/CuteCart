@@ -1,0 +1,317 @@
+<div class="reports-container">
+  <div class="reports-header">
+    <h1>📊 Sales Reports</h1>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="exportToCSV()" [disabled]="!reportData">
+        📥 Export CSV
+      </button>
+      <button class="btn btn-secondary" (click)="printReport()" [disabled]="!reportData">
+        🖨️ Print
+      </button>
+    </div>
+  </div>
+
+  <div class="report-filters">
+    <div class="filter-group">
+      <label>Report Type:</label>
+      <select [(ngModel)]="reportType" (change)="onReportTypeChange()" class="form-control">
+        <option value="today">Today</option>
+        <option value="weekly">Last 7 Days</option>
+        <option value="monthly">Last 30 Days</option>
+        <option value="custom">Custom Date Range</option>
+      </select>
+    </div>
+
+    <div class="filter-group" *ngIf="reportType === 'custom'">
+      <label>Start Date:</label>
+      <input type="date" [(ngModel)]="startDate" class="form-control" />
+    </div>
+
+    <div class="filter-group" *ngIf="reportType === 'custom'">
+      <label>End Date:</label>
+      <input type="date" [(ngModel)]="endDate" class="form-control" />
+    </div>
+
+    <button 
+      *ngIf="reportType === 'custom'" 
+      class="btn btn-primary" 
+      (click)="generateReport()"
+      [disabled]="!startDate || !endDate"
+    >
+      Generate Report
+    </button>
+  </div>
+
+  <div class="loading" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Generating report...</p>
+  </div>
+
+  <div class="error-message" *ngIf="error">
+    {{ error }}
+  </div>
+
+  <div class="report-content" *ngIf="reportData && !loading">
+    <h2 class="report-title">{{ getReportTitle() }}</h2>
+
+    <div class="tabs">
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'overview'"
+        (click)="activeTab = 'overview'"
+      >
+        Overview
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'products'"
+        (click)="activeTab = 'products'"
+      >
+        Products
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'categories'"
+        (click)="activeTab = 'categories'"
+      >
+        Categories
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'payments'"
+        (click)="activeTab = 'payments'"
+      >
+        Payments
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'invoices'"
+        (click)="activeTab = 'invoices'"
+      >
+        Invoices
+      </button>
+    </div>
+
+    <div class="tab-content" *ngIf="activeTab === 'overview'">
+      <div class="summary-cards">
+        <div class="summary-card">
+          <div class="card-icon">💰</div>
+          <div class="card-content">
+            <h3>Total Sales</h3>
+            <p class="card-value">{{ formatCurrency(reportData.summary.total_sales) }}</p>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="card-icon">📈</div>
+          <div class="card-content">
+            <h3>Total Profit</h3>
+            <p class="card-value profit">{{ formatCurrency(reportData.summary.total_profit) }}</p>
+            <small>{{ getProfitMargin().toFixed(2) }}% margin</small>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="card-icon">🧾</div>
+          <div class="card-content">
+            <h3>Total Invoices</h3>
+            <p class="card-value">{{ reportData.summary.total_invoices }}</p>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="card-icon">📦</div>
+          <div class="card-content">
+            <h3>Items Sold</h3>
+            <p class="card-value">{{ reportData.summary.total_items_sold }}</p>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="card-icon">💵</div>
+          <div class="card-content">
+            <h3>Avg Order Value</h3>
+            <p class="card-value">{{ formatCurrency(getAverageOrderValue()) }}</p>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="card-icon">🏷️</div>
+          <div class="card-content">
+            <h3>Total Discount</h3>
+            <p class="card-value discount">{{ formatCurrency(reportData.summary.total_discount) }}</p>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="card-icon">📊</div>
+          <div class="card-content">
+            <h3>Tax Collected</h3>
+            <p class="card-value">{{ formatCurrency(reportData.summary.total_tax) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-section" *ngIf="reportData.dailySales.length > 0">
+        <h3>Daily Sales Trend</h3>
+        <div class="daily-sales-chart">
+          <div class="chart-bar-container" *ngFor="let day of reportData.dailySales">
+            <div class="chart-bar-wrapper">
+              <div 
+                class="chart-bar" 
+                [style.height.%]="(day.total_sales / getMaxDailySales()) * 100"
+                [title]="formatCurrency(day.total_sales)"
+              >
+                <span class="bar-value">{{ formatCurrency(day.total_sales) }}</span>
+              </div>
+            </div>
+            <div class="chart-label">{{ formatDateOnly(day.date) }}</div>
+            <div class="chart-sublabel">{{ day.invoice_count }} orders</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-section" *ngIf="reportData.hourlySales.length > 0">
+        <h3>Hourly Sales Distribution</h3>
+        <div class="hourly-sales-chart">
+          <div class="chart-bar-container" *ngFor="let hour of reportData.hourlySales">
+            <div class="chart-bar-wrapper">
+              <div 
+                class="chart-bar" 
+                [style.height.%]="(hour.total_sales / getMaxHourlySales()) * 100"
+                [title]="formatCurrency(hour.total_sales)"
+              >
+                <span class="bar-value">{{ formatCurrency(hour.total_sales) }}</span>
+              </div>
+            </div>
+            <div class="chart-label">{{ hour.hour }}:00</div>
+            <div class="chart-sublabel">{{ hour.invoice_count }} orders</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" *ngIf="activeTab === 'products'">
+      <h3>Top Selling Products</h3>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Product Name</th>
+              <th>Quantity Sold</th>
+              <th>Revenue</th>
+              <th>Profit</th>
+              <th>Profit Margin</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let product of reportData.topProducts; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ product.product_name }}</td>
+              <td>{{ product.quantity_sold }}</td>
+              <td>{{ formatCurrency(product.total_revenue) }}</td>
+              <td class="profit">{{ formatCurrency(product.profit) }}</td>
+              <td>{{ product.total_revenue > 0 ? ((product.profit / product.total_revenue) * 100).toFixed(2) : 0 }}%</td>
+            </tr>
+            <tr *ngIf="reportData.topProducts.length === 0">
+              <td colspan="6" class="no-data">No products sold in this period</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" *ngIf="activeTab === 'categories'">
+      <h3>Category Performance</h3>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Category</th>
+              <th>Items Count</th>
+              <th>Quantity Sold</th>
+              <th>Revenue</th>
+              <th>Profit</th>
+              <th>Profit Margin</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let category of reportData.categoryBreakdown; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ category.category || 'Uncategorized' }}</td>
+              <td>{{ category.items_count }}</td>
+              <td>{{ category.quantity_sold }}</td>
+              <td>{{ formatCurrency(category.total_revenue) }}</td>
+              <td class="profit">{{ formatCurrency(category.profit) }}</td>
+              <td>{{ category.total_revenue > 0 ? ((category.profit / category.total_revenue) * 100).toFixed(2) : 0 }}%</td>
+            </tr>
+            <tr *ngIf="reportData.categoryBreakdown.length === 0">
+              <td colspan="7" class="no-data">No category data available</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" *ngIf="activeTab === 'payments'">
+      <h3>Payment Method Breakdown</h3>
+      <div class="payment-cards">
+        <div class="payment-card" *ngFor="let payment of reportData.paymentBreakdown">
+          <h4>{{ payment.payment_method | titlecase }}</h4>
+          <div class="payment-stats">
+            <div class="stat">
+              <label>Transactions:</label>
+              <span>{{ payment.count }}</span>
+            </div>
+            <div class="stat">
+              <label>Total Amount:</label>
+              <span class="amount">{{ formatCurrency(payment.total) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="reportData.paymentBreakdown.length === 0" class="no-data">
+        No payment data available
+      </div>
+    </div>
+
+    <div class="tab-content" *ngIf="activeTab === 'invoices'">
+      <h3>Invoice Details</h3>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Subtotal</th>
+              <th>Tax</th>
+              <th>Discount</th>
+              <th>Total</th>
+              <th>Payment</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let invoice of reportData.invoices">
+              <td>{{ invoice.invoice_number }}</td>
+              <td>{{ formatDate(invoice.created_at) }}</td>
+              <td>{{ invoice.customer_name || 'Walk-in' }}</td>
+              <td>{{ invoice.items_count }}</td>
+              <td>{{ formatCurrency(invoice.subtotal) }}</td>
+              <td>{{ formatCurrency(invoice.tax_amount) }}</td>
+              <td>{{ formatCurrency(invoice.discount) }}</td>
+              <td class="total">{{ formatCurrency(invoice.total) }}</td>
+              <td>{{ invoice.payment_method | titlecase }}</td>
+            </tr>
+            <tr *ngIf="reportData.invoices.length === 0">
+              <td colspan="9" class="no-data">No invoices found in this period</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

@@ -60,6 +60,12 @@ export const routes: Routes = [
     data: { roles: ['admin', 'manager'] }
   },
   { 
+    path: 'reports', 
+    loadComponent: () => import('./reports/reports.component').then(m => m.ReportsComponent),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['admin', 'manager'] }
+  },
+  { 
     path: 'forgot-password', 
     loadComponent: () => import('./forgot-password/forgot-password').then(m => m.ForgotPasswordComponent)
   },

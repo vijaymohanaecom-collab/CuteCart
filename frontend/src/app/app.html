@@ -26,7 +26,7 @@
     <ul class="sidebar-nav">
       <li *ngIf="!authService.isSalesPerson()">
         <a routerLink="/dashboard" [class.active]="isActive('/dashboard')" class="sidebar-link" (click)="closeSidebarOnMobile()">
-          <span class="nav-icon">📊</span>
+          <span class="nav-icon">📈</span>
           <span>Dashboard</span>
         </a>
       </li>
@@ -58,6 +58,12 @@
         <a routerLink="/products" [class.active]="isActive('/products')" class="sidebar-link" (click)="closeSidebarOnMobile()">
           <span class="nav-icon">📦</span>
           <span>Products</span>
+        </a>
+      </li>
+      <li *ngIf="authService.isManager()">
+        <a routerLink="/reports" [class.active]="isActive('/reports')" class="sidebar-link" (click)="closeSidebarOnMobile()">
+          <span class="nav-icon">📊</span>
+          <span>Reports</span>
         </a>
       </li>
       <li *ngIf="authService.isManager()">
