@@ -28,12 +28,22 @@ router.get('/status', requireManager, async (req, res) => {
     const localBackups = backupService.listLocalBackups();
     
     let driveBackups = [];
+    let driveError = null;
     if (hasDrive) {
-      driveBackups = await backupService.listDriveBackups();
+      try {
+        driveBackups = await backupService.listDriveBackups();
+      } catch (driveErr) {
+        if (driveErr.message?.includes('OAUTH_TOKEN_EXPIRED')) {
+          driveError = 'Google Drive token expired. Please regenerate your refresh token.';
+        } else {
+          driveError = driveErr.message;
+        }
+      }
     }
 
     res.json({
       google_drive_enabled: hasDrive,
+      google_drive_error: driveError,
       local_backup_count: localBackups.length,
       drive_backup_count: driveBackups.length,
       last_local_backup: localBackups[0] || null,
@@ -79,9 +89,18 @@ router.get('/list', requireManager, async (req, res) => {
   try {
     const localBackups = backupService.listLocalBackups();
     let driveBackups = [];
+    let driveError = null;
     
     if (backupService.driveClient) {
-      driveBackups = await backupService.listDriveBackups();
+      try {
+        driveBackups = await backupService.listDriveBackups();
+      } catch (driveErr) {
+        if (driveErr.message?.includes('OAUTH_TOKEN_EXPIRED')) {
+          driveError = 'Google Drive token expired. Please regenerate your refresh token by running: node src/scripts/get-google-token.js';
+        } else {
+          driveError = driveErr.message;
+        }
+      }
     }
 
     // Combine and sort by date
@@ -92,11 +111,12 @@ router.get('/list', requireManager, async (req, res) => {
       backups: allBackups,
       total: allBackups.length,
       local_count: localBackups.length,
-      drive_count: driveBackups.length
+      drive_count: driveBackups.length,
+      google_drive_error: driveError
     });
   } catch (error) {
     console.error('Error listing backups:', error);
-    res.status(500).json({ error: 'Failed to list backups' });
+    res.status(500).json({ error: 'Failed to list backups', details: error.message });
   }
 });
 

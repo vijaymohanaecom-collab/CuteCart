@@ -1,0 +1,315 @@
+<div class="container">
+  <!-- Loading State -->
+  <div *ngIf="!todayData" class="loading-state">
+    <div class="loading-spinner">⏳</div>
+    <p>Loading cash register...</p>
+  </div>
+
+  <!-- Today's Cash Register Card -->
+  <div class="today-card" *ngIf="todayData">
+    <div class="card-header">
+      <h2 class="card-title">💵 Cash Register - {{ todayDate | date:'dd MMM yyyy' }}</h2>
+      <div class="header-actions">
+        <button *ngIf="!todayData.hasEntry && isManager" (click)="openOpenModal()" class="btn btn-primary">
+          🔓 Open Register
+        </button>
+        <button *ngIf="todayData.hasEntry && (todayData.entry?.closing_cash === null || todayData.entry?.closing_cash === undefined) && isManager" (click)="openCloseModal()" class="btn btn-success">
+          🔒 Close Register
+        </button>
+        <button (click)="openHistoryModal()" class="btn btn-secondary">
+          📋 View History
+        </button>
+      </div>
+    </div>
+
+    <div class="today-content">
+      <div *ngIf="!todayData.hasEntry" class="empty-state">
+        <div class="empty-icon">🔓</div>
+        <h3>Cash Register Not Opened</h3>
+        <p>Open the cash register to start tracking today's cash transactions</p>
+      </div>
+
+      <div *ngIf="todayData.hasEntry" class="cash-summary">
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="summary-label">Opening Cash</div>
+            <div class="summary-value opening">₹{{ todayData.entry?.opening_cash | number:'1.2-2' }}</div>
+          </div>
+
+          <div class="summary-item">
+            <div class="summary-label">Cash Sales</div>
+            <div class="summary-value positive">+₹{{ todayData.cashSales | number:'1.2-2' }}</div>
+          </div>
+
+          <div class="summary-item">
+            <div class="summary-label">Cash Expenses</div>
+            <div class="summary-value negative">-₹{{ todayData.cashExpenses | number:'1.2-2' }}</div>
+          </div>
+
+          <div class="summary-item highlight">
+            <div class="summary-label">Expected Closing Cash</div>
+            <div class="summary-value expected">₹{{ todayData.expectedClosingCash | number:'1.2-2' }}</div>
+          </div>
+        </div>
+
+        <div *ngIf="todayData.entry?.closing_cash !== null && todayData.entry?.closing_cash !== undefined" class="closing-summary">
+          <div class="closing-grid">
+            <div class="closing-item">
+              <div class="closing-label">Actual Closing Cash</div>
+              <div class="closing-value">₹{{ todayData.entry?.closing_cash | number:'1.2-2' }}</div>
+            </div>
+
+            <div class="closing-item">
+              <div class="closing-label">Difference</div>
+              <div class="closing-value" [ngClass]="getDifferenceClass(todayData.entry?.difference)">
+                <span *ngIf="(todayData.entry?.difference || 0) > 0">+</span>₹{{ todayData.entry?.difference | number:'1.2-2' }}
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="todayData.entry?.notes" class="notes-section">
+            <strong>Notes:</strong> {{ todayData.entry?.notes }}
+          </div>
+
+          <div class="closed-info">
+            <span class="closed-badge">✓ Closed</span>
+            <span class="closed-time">{{ todayData.entry?.closed_at | date:'hh:mm a' }}</span>
+            <span class="closed-by" *ngIf="todayData.entry?.closed_by">by {{ todayData.entry?.closed_by }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📊</div>
+      <div class="stat-content">
+        <div class="stat-label">Total Entries</div>
+        <div class="stat-value">{{ summary.entryCount }}</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">✓</div>
+      <div class="stat-content">
+        <div class="stat-label">Closed Registers</div>
+        <div class="stat-value">{{ summary.closedCount }}</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-success">
+      <div class="stat-icon">💰</div>
+      <div class="stat-content">
+        <div class="stat-label">Total Opening Cash</div>
+        <div class="stat-value">₹{{ summary.totalOpening | number:'1.2-2' }}</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-info">
+      <div class="stat-icon">💵</div>
+      <div class="stat-content">
+        <div class="stat-label">Total Closing Cash</div>
+        <div class="stat-value">₹{{ summary.totalClosing | number:'1.2-2' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent History -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Recent History</h2>
+    </div>
+
+    <div class="filters-section">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label class="filter-label">📅 Date Range</label>
+          <select class="filter-select" [(ngModel)]="dateFilter" (ngModelChange)="onDateFilterChange()">
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="this_week">This Week</option>
+            <option value="this_month">This Month</option>
+            <option value="last_month">Last Month</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+
+        <div class="filter-group" *ngIf="dateFilter === 'custom'">
+          <label class="filter-label">From Date</label>
+          <input type="date" class="filter-input" [(ngModel)]="customStartDate" (ngModelChange)="onCustomDateChange()" />
+        </div>
+
+        <div class="filter-group" *ngIf="dateFilter === 'custom'">
+          <label class="filter-label">To Date</label>
+          <input type="date" class="filter-input" [(ngModel)]="customEndDate" (ngModelChange)="onCustomDateChange()" />
+        </div>
+      </div>
+
+      <div class="filter-results">
+        Showing <strong>{{ filteredEntries.length }}</strong> of <strong>{{ entries.length }}</strong> entries
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Opening Cash</th>
+            <th>Expected Closing</th>
+            <th>Actual Closing</th>
+            <th>Difference</th>
+            <th>Status</th>
+            <th *ngIf="isManager">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let entry of filteredEntries">
+            <td>{{ entry.date | date:'dd MMM yyyy' }}</td>
+            <td class="amount-cell">₹{{ entry.opening_cash | number:'1.2-2' }}</td>
+            <td class="amount-cell">₹{{ entry.expected_closing_cash | number:'1.2-2' }}</td>
+            <td class="amount-cell">
+              <span *ngIf="entry.closing_cash !== null && entry.closing_cash !== undefined">
+                ₹{{ entry.closing_cash | number:'1.2-2' }}
+              </span>
+              <span *ngIf="entry.closing_cash === null || entry.closing_cash === undefined" class="pending">
+                Pending
+              </span>
+            </td>
+            <td class="amount-cell">
+              <span *ngIf="entry.difference !== null && entry.difference !== undefined" [ngClass]="getDifferenceClass(entry.difference)">
+                <span *ngIf="entry.difference > 0">+</span>₹{{ entry.difference | number:'1.2-2' }}
+              </span>
+              <span *ngIf="entry.difference === null || entry.difference === undefined">-</span>
+            </td>
+            <td>
+              <span *ngIf="entry.closing_cash !== null && entry.closing_cash !== undefined" class="status-badge closed">Closed</span>
+              <span *ngIf="entry.closing_cash === null || entry.closing_cash === undefined" class="status-badge open">Open</span>
+            </td>
+            <td *ngIf="isManager">
+              <button (click)="deleteEntry(entry)" class="btn btn-sm btn-danger">Delete</button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredEntries.length === 0">
+            <td [attr.colspan]="isManager ? 7 : 6" class="no-results">
+              No cash register entries found
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Open Register Modal -->
+<div *ngIf="showOpenModal" class="modal-overlay" (click)="closeOpenModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">🔓 Open Cash Register</h3>
+      <button (click)="closeOpenModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="text" class="form-control" [value]="todayDate | date:'dd MMM yyyy'" readonly />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Opening Cash (₹) *</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          [(ngModel)]="openingCash"
+          min="0"
+          step="0.01"
+          placeholder="0.00"
+          required
+          autofocus
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea 
+          class="form-control" 
+          [(ngModel)]="notes"
+          rows="3"
+          placeholder="Optional notes"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="openRegister()" class="btn btn-primary">Open Register</button>
+      <button (click)="closeOpenModal()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Close Register Modal -->
+<div *ngIf="showCloseModal" class="modal-overlay" (click)="closeCloseModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">🔒 Close Cash Register</h3>
+      <button (click)="closeCloseModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="expected-summary">
+        <div class="expected-item">
+          <span>Opening Cash:</span>
+          <strong>₹{{ todayData?.entry?.opening_cash | number:'1.2-2' }}</strong>
+        </div>
+        <div class="expected-item">
+          <span>Cash Sales:</span>
+          <strong class="positive">+₹{{ todayData?.cashSales | number:'1.2-2' }}</strong>
+        </div>
+        <div class="expected-item">
+          <span>Cash Expenses:</span>
+          <strong class="negative">-₹{{ todayData?.cashExpenses | number:'1.2-2' }}</strong>
+        </div>
+        <div class="expected-item highlight">
+          <span>Expected Closing:</span>
+          <strong>₹{{ todayData?.expectedClosingCash | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Actual Closing Cash (₹) *</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          [(ngModel)]="closingCash"
+          min="0"
+          step="0.01"
+          required
+          autofocus
+        />
+        <div *ngIf="closingCash !== (todayData?.expectedClosingCash || 0)" class="difference-hint">
+          <span [ngClass]="getDifferenceClass(closingCash - (todayData?.expectedClosingCash || 0))">
+            Difference: 
+            <span *ngIf="(closingCash - (todayData?.expectedClosingCash || 0)) > 0">+</span>₹{{ (closingCash - (todayData?.expectedClosingCash || 0)) | number:'1.2-2' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea 
+          class="form-control" 
+          [(ngModel)]="notes"
+          rows="3"
+          placeholder="Optional notes about the difference or closing"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="closeRegister()" class="btn btn-success">Close Register</button>
+      <button (click)="closeCloseModal()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>

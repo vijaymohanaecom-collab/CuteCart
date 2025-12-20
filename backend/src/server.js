@@ -66,6 +66,8 @@ app.use('/api/invoices', authenticateToken, require('./routes/invoices'));
 app.use('/api/users', authenticateToken, require('./routes/users'));
 app.use('/api/settings', authenticateToken, require('./routes/settings'));
 app.use('/api/expenses', authenticateToken, require('./routes/expenses'));
+app.use('/api/other-income', authenticateToken, require('./routes/other-income'));
+app.use('/api/cash-register', authenticateToken, require('./routes/cash-register'));
 app.use('/api/staff', authenticateToken, require('./routes/staff'));
 app.use('/api/attendance', authenticateToken, require('./routes/attendance'));
 app.use('/api/backup', authenticateToken, require('./routes/backup'));

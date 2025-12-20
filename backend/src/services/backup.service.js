@@ -42,12 +42,28 @@ class BackupService {
       });
 
       this.driveClient = google.drive({ version: 'v3', auth: oauth2Client });
+      this.oauth2Client = oauth2Client;
       this.driveFolderId = folderId || 'root';
       
-      console.log('✓ Google Drive initialized successfully');
-      return true;
+      // Test the credentials by making a simple API call
+      try {
+        await this.driveClient.files.list({ pageSize: 1 });
+        console.log('✓ Google Drive initialized successfully');
+        return true;
+      } catch (authError) {
+        if (authError.code === 401 || authError.message?.includes('invalid_grant')) {
+          console.error('⚠ Google Drive OAuth token expired or invalid. Please regenerate refresh token.');
+          console.error('Run: node src/scripts/get-google-token.js');
+          this.driveClient = null;
+          this.oauth2Client = null;
+          return false;
+        }
+        throw authError;
+      }
     } catch (error) {
       console.error('Failed to initialize Google Drive:', error.message);
+      this.driveClient = null;
+      this.oauth2Client = null;
       return false;
     }
   }
@@ -213,8 +229,14 @@ class BackupService {
         type: 'google_drive'
       }));
     } catch (error) {
-      console.error('Failed to list Drive backups:', error);
-      return [];
+      if (error.code === 401 || error.message?.includes('invalid_grant')) {
+        console.error('⚠ Google Drive token expired. Disabling Drive integration.');
+        this.driveClient = null;
+        this.oauth2Client = null;
+        throw new Error('OAUTH_TOKEN_EXPIRED: Please regenerate your Google Drive refresh token');
+      }
+      console.error('Failed to list Drive backups:', error.message);
+      throw error;
     }
   }
 

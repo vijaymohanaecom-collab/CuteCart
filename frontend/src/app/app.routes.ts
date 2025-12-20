@@ -33,7 +33,19 @@ export const routes: Routes = [
     path: 'expenses', 
     loadComponent: () => import('./expenses/expenses.component').then(m => m.ExpensesComponent),
     canActivate: [authGuard, roleGuard],
+    data: { roles: ['admin', 'manager', 'sales'] }
+  },
+  { 
+    path: 'other-income', 
+    loadComponent: () => import('./other-income/other-income.component').then(m => m.OtherIncomeComponent),
+    canActivate: [authGuard, roleGuard],
     data: { roles: ['admin', 'manager'] }
+  },
+  { 
+    path: 'cash-register', 
+    loadComponent: () => import('./cash-register/cash-register.component').then(m => m.CashRegisterComponent),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['admin', 'manager', 'sales'] }
   },
   { 
     path: 'staff', 

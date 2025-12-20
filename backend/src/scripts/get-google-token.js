@@ -9,9 +9,9 @@ const readline = require('readline');
 // 5. Choose "Desktop app" as application type
 // 6. Download credentials and copy Client ID and Client Secret below
 
-const CLIENT_ID = '27920329424-kku9hqcikrqjq68lfs8dr33l5vds02u2.apps.googleusercontent.com';
-const CLIENT_SECRET = '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';
-const REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob';
+const CLIENT_ID = '27920329424-94abcpsstggllba3f7gevht1j94u0gs9.apps.googleusercontent.com';
+const CLIENT_SECRET = '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';
+const REDIRECT_URI = 'http://localhost:3000/oauth2callback';
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,

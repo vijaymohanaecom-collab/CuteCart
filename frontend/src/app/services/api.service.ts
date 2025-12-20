@@ -244,4 +244,70 @@ export class ApiService {
   downloadBackup(filename: string): string {
     return `${this.apiUrl}/backup/download/${filename}`;
   }
+
+  // Other Income
+  getOtherIncome(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/other-income`);
+  }
+
+  getOtherIncomeByDateRange(startDate: string, endDate: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/other-income/range?startDate=${startDate}&endDate=${endDate}`);
+  }
+
+  getOtherIncomeStats(startDate?: string, endDate?: string): Observable<any> {
+    let url = `${this.apiUrl}/other-income/stats`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+    return this.http.get(url);
+  }
+
+  createOtherIncome(income: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/other-income`, income);
+  }
+
+  updateOtherIncome(id: number, income: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/other-income/${id}`, income);
+  }
+
+  deleteOtherIncome(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/other-income/${id}`);
+  }
+
+  // Cash Register
+  getCashRegisterEntries(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/cash-register`);
+  }
+
+  getTodayCashRegister(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/cash-register/today`);
+  }
+
+  getCashRegisterByDate(date: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/cash-register/date/${date}`);
+  }
+
+  getCashRegisterSummary(startDate?: string, endDate?: string): Observable<any> {
+    let url = `${this.apiUrl}/cash-register/summary`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+    return this.http.get(url);
+  }
+
+  openCashRegister(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/cash-register/open`, data);
+  }
+
+  closeCashRegister(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/cash-register/close`, data);
+  }
+
+  updateCashRegister(date: string, data: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/cash-register/${date}`, data);
+  }
+
+  deleteCashRegister(date: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/cash-register/${date}`);
+  }
 }
