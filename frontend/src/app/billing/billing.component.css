@@ -182,6 +182,153 @@
   font-weight: 600;
 }
 
+/* Cart Tabs */
+.cart-tabs-container {
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0 10px;
+}
+
+.cart-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
+}
+
+.cart-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.cart-tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cart-tabs::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 2px;
+}
+
+.cart-tab {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-width: 100px;
+  max-width: 180px;
+  position: relative;
+  margin-top: 4px;
+}
+
+.cart-tab:hover {
+  background: #ebebeb;
+}
+
+.cart-tab.active {
+  background: #f5f5f5;
+  border-color: #4a90e2;
+  border-bottom-color: #f5f5f5;
+  margin-bottom: -1px;
+  z-index: 1;
+}
+
+.tab-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.tab-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-badge {
+  background: #4a90e2;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.tab-edit-btn,
+.tab-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 12px;
+  color: #666;
+  transition: all 0.2s;
+  opacity: 0.6;
+}
+
+.tab-edit-btn:hover,
+.tab-close-btn:hover {
+  opacity: 1;
+  color: #333;
+}
+
+.tab-close-btn {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.tab-close-btn:hover {
+  color: #dc3545;
+}
+
+.tab-edit-content {
+  width: 100%;
+}
+
+.tab-name-input {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid #4a90e2;
+  border-radius: 3px;
+  font-size: 13px;
+  outline: none;
+  background: white;
+}
+
+.cart-tab-new {
+  padding: 10px 14px;
+  background: transparent;
+  border: 1px dashed #4a90e2;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  color: #4a90e2;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+
+.cart-tab-new:hover {
+  background: #f0f7ff;
+  border-color: #3d7bc5;
+  color: #3d7bc5;
+}
+
 .cart-content {
   flex: 1;
   display: flex;

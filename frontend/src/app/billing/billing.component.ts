@@ -1,13 +1,16 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { SettingsService } from '../services/settings.service';
+import { CartTabService } from '../services/cart-tab.service';
 import { Product } from '../models/product.model';
 import { Invoice, InvoiceItem } from '../models/invoice.model';
 import { Settings } from '../models/settings.model';
+import { CartTab, CartTabState } from '../models/cart-tab.model';
 import { timeout } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-billing',
@@ -16,21 +19,112 @@ import { timeout } from 'rxjs/operators';
   templateUrl: './billing.component.html',
   styleUrl: './billing.component.css'
 })
-export class BillingComponent implements OnInit {
+export class BillingComponent implements OnInit, OnDestroy {
   products: Product[] = [];
   filteredProducts: Product[] = [];
-  cart: InvoiceItem[] = [];
   searchTerm = '';
   
-  customerName = '';
-  customerPhone = '';
-  paymentMethod = 'cash';
-  notes = '';
+  // Cart tabs state
+  cartTabs: CartTab[] = [];
+  activeTab: CartTab | null = null;
+  private cartSubscription?: Subscription;
   
-  // Payment split amounts
-  cashAmount = 0;
-  upiAmount = 0;
-  isPartialPayment = false;
+  // Current cart data (derived from active tab)
+  get cart(): InvoiceItem[] {
+    return this.activeTab?.items || [];
+  }
+  
+  get customerName(): string {
+    return this.activeTab?.customerName || '';
+  }
+  set customerName(value: string) {
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ customerName: value });
+    }
+  }
+  
+  get customerPhone(): string {
+    return this.activeTab?.customerPhone || '';
+  }
+  set customerPhone(value: string) {
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ customerPhone: value });
+    }
+  }
+  
+  get paymentMethod(): string {
+    return this.activeTab?.paymentMethod || 'cash';
+  }
+  set paymentMethod(value: string) {
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ paymentMethod: value });
+    }
+  }
+  
+  get notes(): string {
+    return this.activeTab?.notes || '';
+  }
+  set notes(value: string) {
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ notes: value });
+    }
+  }
+  
+  get cashAmount(): number {
+    return this.activeTab?.cashAmount || 0;
+  }
+  set cashAmount(value: number) {
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ cashAmount: value });
+    }
+  }
+  
+  get upiAmount(): number {
+    return this.activeTab?.upiAmount || 0;
+  }
+  set upiAmount(value: number) {
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ upiAmount: value });
+    }
+  }
+  
+  get isPartialPayment(): boolean {
+    return this.activeTab?.isPartialPayment || false;
+  }
+  set isPartialPayment(value: boolean) {
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ isPartialPayment: value });
+    }
+  }
+  
+  get discount(): number {
+    return this.activeTab?.discount || 0;
+  }
+  set discount(value: number) {
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ discount: value });
+      this.calculateTotals();
+    }
+  }
+  
+  get discountType(): 'percentage' | 'fixed' {
+    return this.activeTab?.discountType || 'fixed';
+  }
+  set discountType(value: 'percentage' | 'fixed') {
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ discountType: value });
+    }
+  }
+  
+  get discountPercentage(): number {
+    return this.activeTab?.discountPercentage || 0;
+  }
+  set discountPercentage(value: number) {
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ discountPercentage: value });
+      this.calculateTotals();
+    }
+  }
   
   // Customer auto-complete
   customers: {customer_name: string, customer_phone: string}[] = [];
@@ -40,9 +134,6 @@ export class BillingComponent implements OnInit {
   subtotal = 0;
   taxRate = 0;
   taxAmount = 0;
-  discount = 0;
-  discountType: 'percentage' | 'fixed' = 'fixed';
-  discountPercentage = 0;
   discountPresets: number[] = [5, 10, 15, 20];
   total = 0;
 
@@ -55,13 +146,28 @@ export class BillingComponent implements OnInit {
     private apiService: ApiService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    private cartTabService: CartTabService
   ) {}
 
   ngOnInit(): void {
     this.loadProducts();
     this.loadSettings();
     this.loadCustomers();
+    
+    // Subscribe to cart tabs state
+    this.cartSubscription = this.cartTabService.getState().subscribe(state => {
+      this.cartTabs = state.tabs;
+      this.activeTab = this.cartTabService.getActiveTab();
+      
+      // Initialize first tab if none exist
+      if (this.cartTabs.length === 0) {
+        this.cartTabService.createNewTab();
+      }
+      
+      this.calculateTotals();
+      this.cdr.detectChanges();
+    });
     
     // Subscribe to settings changes
     this.settingsService.settings$.subscribe(settings => {
@@ -71,6 +177,12 @@ export class BillingComponent implements OnInit {
         this.calculateTotals();
       }
     });
+  }
+  
+  ngOnDestroy(): void {
+    if (this.cartSubscription) {
+      this.cartSubscription.unsubscribe();
+    }
   }
 
   loadProducts(): void {
@@ -153,20 +265,7 @@ export class BillingComponent implements OnInit {
   }
 
   addToCart(product: Product): void {
-    const existing = this.cart.find(item => item.product_id === product.id);
-    if (existing) {
-      existing.quantity++;
-      existing.total_price = existing.quantity * existing.unit_price;
-    } else {
-      this.cart.push({
-        product_id: product.id,
-        product_name: product.name,
-        quantity: 1,
-        unit_price: product.price,
-        total_price: product.price,
-        purchase_price: product.purchase_price || 0
-      });
-    }
+    this.cartTabService.addItemToActiveTab(product);
     this.calculateTotals();
     
     // Clear search box after adding item to cart
@@ -175,45 +274,40 @@ export class BillingComponent implements OnInit {
   }
 
   updateQuantity(item: InvoiceItem, quantity: number): void {
-    if (quantity <= 0) {
-      this.removeFromCart(item);
-    } else {
-      item.quantity = quantity;
-      item.total_price = item.quantity * item.unit_price;
+    if (item.product_id !== undefined) {
+      this.cartTabService.updateItemQuantityInActiveTab(item.product_id, quantity);
       this.calculateTotals();
     }
   }
 
   removeFromCart(item: InvoiceItem): void {
-    this.cart = this.cart.filter(i => i !== item);
-    this.calculateTotals();
+    if (item.product_id !== undefined) {
+      this.cartTabService.removeItemFromActiveTab(item.product_id);
+      this.calculateTotals();
+    }
   }
 
   calculateTotals(): void {
+    if (!this.activeTab) {
+      this.subtotal = 0;
+      this.taxAmount = 0;
+      this.total = 0;
+      return;
+    }
+    
     this.subtotal = this.cart.reduce((sum, item) => sum + item.total_price, 0);
     this.taxAmount = (this.subtotal * this.taxRate) / 100;
     
     // Calculate discount based on type
-    if (this.discountType === 'percentage') {
-      this.discount = (this.subtotal * this.discountPercentage) / 100;
-    }
-    // For 'fixed' type, discount is already set directly
+    const currentDiscount = this.discountType === 'percentage' 
+      ? (this.subtotal * this.discountPercentage) / 100
+      : this.discount;
     
-    this.total = this.subtotal + this.taxAmount - this.discount;
+    this.total = this.subtotal + this.taxAmount - currentDiscount;
   }
 
   clearCart(): void {
-    this.cart = [];
-    this.customerName = '';
-    this.customerPhone = '';
-    this.notes = '';
-    this.discount = 0;
-    this.discountPercentage = 0;
-    this.discountType = 'fixed';
-    this.paymentMethod = 'cash';
-    this.isPartialPayment = false;
-    this.cashAmount = 0;
-    this.upiAmount = 0;
+    this.cartTabService.clearActiveTab();
     this.calculateTotals();
   }
 
@@ -238,6 +332,10 @@ export class BillingComponent implements OnInit {
     
     this.isSaving = true;
     
+    const actualDiscount = this.discountType === 'percentage' 
+      ? (this.subtotal * this.discountPercentage) / 100
+      : this.discount;
+    
     const invoice: Invoice = {
       invoice_number: this.invoiceNumber,
       customer_name: this.customerName || 'Walk-in Customer',
@@ -246,7 +344,7 @@ export class BillingComponent implements OnInit {
       subtotal: this.subtotal,
       tax_rate: this.taxRate,
       tax_amount: this.taxAmount,
-      discount: this.discount,
+      discount: actualDiscount,
       total: this.total,
       payment_method: this.isPartialPayment ? 'split' : this.paymentMethod,
       cash_amount: this.isPartialPayment ? this.cashAmount : (this.paymentMethod === 'cash' ? this.total : 0),
@@ -263,6 +361,7 @@ export class BillingComponent implements OnInit {
           this.isSaving = false;
           this.showInvoicePreview = false;
           this.clearCart();
+          this.loadProducts(); // Reload products to get updated stock
           this.cdr.detectChanges();
         }, 0);
       },
@@ -288,35 +387,40 @@ export class BillingComponent implements OnInit {
   }
 
   onDiscountTypeChange(): void {
-    // Reset discount values when switching type
-    this.discount = 0;
-    this.discountPercentage = 0;
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ 
+        discount: 0, 
+        discountPercentage: 0 
+      });
+    }
     this.calculateTotals();
   }
 
   togglePartialPayment(): void {
-    this.isPartialPayment = !this.isPartialPayment;
-    if (this.isPartialPayment) {
-      // Initialize with total amount in cash
-      this.cashAmount = this.total;
-      this.upiAmount = 0;
-    } else {
-      // Reset to single payment method
-      this.cashAmount = 0;
-      this.upiAmount = 0;
+    const newValue = !this.isPartialPayment;
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({
+        isPartialPayment: newValue,
+        cashAmount: newValue ? this.total : 0,
+        upiAmount: 0
+      });
     }
   }
 
   onCashAmountChange(): void {
     // Auto-populate remaining balance in UPI
     const remaining = this.total - (this.cashAmount || 0);
-    this.upiAmount = Math.max(0, remaining);
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ upiAmount: Math.max(0, remaining) });
+    }
   }
 
   onUpiAmountChange(): void {
     // Auto-populate remaining balance in cash
     const remaining = this.total - (this.upiAmount || 0);
-    this.cashAmount = Math.max(0, remaining);
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ cashAmount: Math.max(0, remaining) });
+    }
   }
 
   getPaymentTotal(): number {
@@ -333,9 +437,46 @@ export class BillingComponent implements OnInit {
   }
 
   applyDiscountPreset(percentage: number): void {
-    this.discountType = 'percentage';
-    this.discountPercentage = percentage;
+    if (this.activeTab) {
+      this.cartTabService.updateActiveTab({ 
+        discountType: 'percentage',
+        discountPercentage: percentage 
+      });
+    }
     this.calculateTotals();
+  }
+  
+  // Tab management methods
+  createNewTab(): void {
+    this.cartTabService.createNewTab();
+  }
+  
+  switchTab(tabId: string): void {
+    this.cartTabService.switchToTab(tabId);
+  }
+  
+  deleteTab(tabId: string): void {
+    if (this.cartTabs.length > 1) {
+      this.cartTabService.deleteTab(tabId);
+    } else {
+      alert('Cannot delete the last tab. At least one tab must remain.');
+    }
+  }
+  
+  startEditingTabName(tab: CartTab): void {
+    tab.isEditing = true;
+    this.cdr.detectChanges();
+  }
+  
+  finishEditingTabName(tab: CartTab, newName: string): void {
+    if (newName.trim()) {
+      this.cartTabService.updateTabName(tab.id, newName.trim());
+    }
+    tab.isEditing = false;
+  }
+  
+  getTabItemCount(tab: CartTab): number {
+    return tab.items.reduce((sum, item) => sum + item.quantity, 0);
   }
 
   onDiscountValueChange(): void {

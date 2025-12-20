@@ -61,100 +61,78 @@
 
   <!-- Cart Section -->
   <div class="cart-section">
-    <div class="cart-header">
-      <h3>Cart</h3>
-    </div>
-
     <!-- Cart Tabs -->
     <div class="cart-tabs-container">
-      <div class="cart-tabs">
-        <div 
-          *ngFor="let tab of cartTabs" 
-          class="cart-tab"
-          [class.active]="activeTab?.id === tab.id"
-          (click)="switchTab(tab.id)"
-        >
-          <div class="tab-content" *ngIf="!tab.isEditing">
-            <span class="tab-name">{{ tab.name }}</span>
-            <span class="tab-badge" *ngIf="getTabItemCount(tab) > 0">{{ getTabItemCount(tab) }}</span>
-            <button 
-              class="tab-edit-btn" 
-              (click)="$event.stopPropagation(); startEditingTabName(tab)"
-              title="Rename tab"
+      <div class="cart-tabs-header">
+        <div class="tabs-list">
+          <div 
+            *ngFor="let tab of tabs" 
+            class="cart-tab"
+            [class.active]="activeTab?.id === tab.id"
+            (click)="switchToTab(tab.id)"
+          >
+            <span 
+              class="tab-name" 
+              *ngIf="!tab.isEditing" 
+              (dblclick)="tab.isEditing = true"
             >
-              ✏️
-            </button>
+              {{ tab.name }}
+              <span class="tab-item-count" *ngIf="tab.items.length > 0">
+                ({{ tab.items.length }})
+              </span>
+            </span>
+            <input 
+              *ngIf="tab.isEditing"
+              type="text" 
+              class="tab-name-input"
+              [(ngModel)]="tab.name"
+              (blur)="updateTabName(tab.id, tab.name); tab.isEditing = false"
+              (keyup.enter)="updateTabName(tab.id, tab.name); tab.isEditing = false"
+              (keyup.escape)="tab.isEditing = false"
+            />
             <button 
-              class="tab-close-btn" 
-              (click)="$event.stopPropagation(); deleteTab(tab.id)"
-              *ngIf="cartTabs.length > 1"
-              title="Close tab"
+              class="tab-close-btn"
+              (click)="deleteTab(tab.id); $event.stopPropagation()"
+              [disabled]="tabs.length <= 1"
+              title="Delete tab"
             >
               ×
             </button>
           </div>
-          <div class="tab-edit-content" *ngIf="tab.isEditing" (click)="$event.stopPropagation()">
-            <input 
-              type="text" 
-              [value]="tab.name"
-              (keyup.enter)="finishEditingTabName(tab, $any($event.target).value)"
-              (blur)="finishEditingTabName(tab, $any($event.target).value)"
-              class="tab-name-input"
-              autofocus
-            />
-          </div>
+          <button 
+            class="add-tab-btn"
+            (click)="createNewTab()"
+            title="Add new tab"
+          >
+            +
+          </button>
         </div>
-        <button class="cart-tab-new" (click)="createNewTab()" title="New cart tab">
-          + New Tab
-        </button>
       </div>
     </div>
 
-    <div class="cart-content">
+    <div class="cart-content" *ngIf="activeTab">
       <!-- Customer Info at Top -->
       <div class="customer-info-top">
-        <div class="form-group customer-autocomplete">
+        <div class="form-group">
           <input 
             type="text" 
             placeholder="Customer Name (Optional)" 
-            [(ngModel)]="customerName"
+            [(ngModel)]="activeTab.customerName"
             (ngModelChange)="onCustomerNameChange()"
-            autocomplete="off"
           />
-          <div class="autocomplete-dropdown" *ngIf="filteredCustomers.length > 0">
-            <div 
-              class="autocomplete-item" 
-              *ngFor="let customer of filteredCustomers"
-              (click)="selectCustomer(customer)"
-            >
-              <div class="customer-name">{{ customer.customer_name }}</div>
-              <div class="customer-phone" *ngIf="customer.customer_phone">{{ customer.customer_phone }}</div>
-            </div>
-          </div>
         </div>
-        <div class="form-group customer-autocomplete">
+        <div class="form-group">
           <input 
             type="text" 
             placeholder="Phone (Optional)" 
-            [(ngModel)]="customerPhone"
+            [(ngModel)]="activeTab.customerPhone"
             (ngModelChange)="onCustomerPhoneChange()"
-            autocomplete="off"
           />
-          <div class="autocomplete-dropdown" *ngIf="filteredCustomers.length > 0 && customerPhone">
-            <div 
-              class="autocomplete-item" 
-              *ngFor="let customer of filteredCustomers"
-              (click)="selectCustomer(customer)"
-            >
-              <div class="customer-name">{{ customer.customer_name }}</div>
-              <div class="customer-phone" *ngIf="customer.customer_phone">{{ customer.customer_phone }}</div>
-            </div>
-          </div>
         </div>
       </div>
 
       <!-- Cart Items Table -->
-      <div class="cart-items-container" *ngIf="cart.length > 0">
+      <div class="cart-items-container" *ngIf="activeTab.items.length > 0">
         <table class="cart-table">
           <thead>
             <tr>
@@ -185,12 +163,12 @@
         </table>
       </div>
 
-      <div *ngIf="cart.length === 0" class="empty-cart-message">
+      <div *ngIf="!activeTab || activeTab.items.length === 0" class="empty-cart-message">
         Cart is empty. Click on products to add them.
       </div>
 
       <!-- Totals Section -->
-      <div class="cart-totals" *ngIf="cart.length > 0">
+      <div class="cart-totals" *ngIf="activeTab && activeTab.items.length > 0">
         <div class="total-row">
           <span>Subtotal:</span>
           <span>₹{{ subtotal | number:'1.2-2' }}</span>
@@ -263,13 +241,14 @@
       </div>
 
       <!-- Payment Method -->
-      <div class="payment-section" *ngIf="cart.length > 0">
+      <div class="payment-section" *ngIf="activeTab && activeTab.items.length > 0">
         <div class="payment-header">
           <label class="payment-label">Payment Method:</label>
           <button 
             class="btn-partial-payment" 
             (click)="togglePartialPayment()"
-            [class.active]="isPartialPayment"
+            [disabled]="isSaving"
+            [class.active]="activeTab?.isPartialPayment"
           >
             {{ isPartialPayment ? '✓ Split Payment' : '+ Split Payment' }}
           </button>
