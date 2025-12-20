@@ -7,11 +7,17 @@ const readline = require('readline');
 // 3. Enable Google Drive API
 // 4. Go to "Credentials" → "Create Credentials" → "OAuth client ID"
 // 5. Choose "Desktop app" as application type
-// 6. Download credentials and copy Client ID and Client Secret below
+// 6. Download credentials and set them as environment variables or enter when prompted
 
-const CLIENT_ID = '27920329424-94abcpsstggllba3f7gevht1j94u0gs9.apps.googleusercontent.com';
-const CLIENT_SECRET = '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';
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID_HERE';
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'YOUR_CLIENT_SECRET_HERE';
 const REDIRECT_URI = 'http://localhost:3000/oauth2callback';
+
+if (CLIENT_ID === 'YOUR_CLIENT_ID_HERE' || CLIENT_SECRET === 'YOUR_CLIENT_SECRET_HERE') {
+  console.error('\n✗ Error: Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables');
+  console.error('   or edit this file to add your credentials.\n');
+  process.exit(1);
+}
 
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
