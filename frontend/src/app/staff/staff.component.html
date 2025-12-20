@@ -287,8 +287,8 @@
 </div>
 
 <!-- Add Staff Modal -->
-<div *ngIf="showAddStaffModal" class="modal-overlay" (click)="closeAddStaffModal()">
-  <div class="modal modal-large" (click)="$event.stopPropagation()">
+<div *ngIf="showAddStaffModal" class="modal-overlay" (keydown.escape)="closeAddStaffModal()" tabindex="-1">
+  <div class="modal modal-large">
     <div class="modal-header">
       <h3 class="modal-title">Add New Staff Member</h3>
       <button (click)="closeAddStaffModal()" class="modal-close">×</button>
@@ -361,8 +361,8 @@
 </div>
 
 <!-- Edit Staff Modal -->
-<div *ngIf="showEditStaffModal && editStaff" class="modal-overlay" (click)="closeEditStaffModal()">
-  <div class="modal modal-large" (click)="$event.stopPropagation()">
+<div *ngIf="showEditStaffModal && editStaff" class="modal-overlay" (keydown.escape)="closeEditStaffModal()" tabindex="-1">
+  <div class="modal modal-large">
     <div class="modal-header">
       <h3 class="modal-title">Edit Staff Member</h3>
       <button (click)="closeEditStaffModal()" class="modal-close">×</button>
@@ -435,8 +435,8 @@
 </div>
 
 <!-- Mark Attendance Modal -->
-<div *ngIf="showMarkAttendanceModal" class="modal-overlay" (click)="closeMarkAttendanceModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
+<div *ngIf="showMarkAttendanceModal" class="modal-overlay" (keydown.escape)="closeMarkAttendanceModal()" tabindex="-1">
+  <div class="modal">
     <div class="modal-header">
       <h3 class="modal-title">Mark Attendance</h3>
       <button (click)="closeMarkAttendanceModal()" class="modal-close">×</button>
@@ -489,8 +489,8 @@
 </div>
 
 <!-- Edit Attendance Modal -->
-<div *ngIf="showEditAttendanceModal && editAttendance" class="modal-overlay" (click)="closeEditAttendanceModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
+<div *ngIf="showEditAttendanceModal && editAttendance" class="modal-overlay" (keydown.escape)="closeEditAttendanceModal()" tabindex="-1">
+  <div class="modal">
     <div class="modal-header">
       <h3 class="modal-title">Edit Attendance</h3>
       <button (click)="closeEditAttendanceModal()" class="modal-close">×</button>
@@ -535,8 +535,8 @@
 </div>
 
 <!-- Bulk Mark Attendance Modal -->
-<div *ngIf="showBulkAttendanceModal" class="modal-overlay" (click)="closeBulkAttendanceModal()">
-  <div class="modal modal-large" (click)="$event.stopPropagation()">
+<div *ngIf="showBulkAttendanceModal" class="modal-overlay" (keydown.escape)="closeBulkAttendanceModal()" tabindex="-1">
+  <div class="modal modal-large">
     <div class="modal-header">
       <h3 class="modal-title">Bulk Mark Attendance</h3>
       <button (click)="closeBulkAttendanceModal()" class="modal-close">×</button>

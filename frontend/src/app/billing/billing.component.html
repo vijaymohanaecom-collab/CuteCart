@@ -340,8 +340,8 @@
 </div>
 
 <!-- Invoice Preview Modal -->
-<div class="modal-overlay" *ngIf="showInvoicePreview" (click)="closeInvoicePreview()">
-  <div class="invoice-modal" (click)="$event.stopPropagation()">
+<div class="modal-overlay" *ngIf="showInvoicePreview" (keydown.escape)="closeInvoicePreview()" tabindex="-1">
+  <div class="invoice-modal">
     <div class="invoice-header-actions">
       <button class="btn-save-sale" (click)="saveSale()" [disabled]="isSaving">
         <span *ngIf="!isSaving">💾 Save Sale</span>

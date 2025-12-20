@@ -204,8 +204,8 @@
 </div>
 
 <!-- Open Register Modal -->
-<div *ngIf="showOpenModal" class="modal-overlay" (click)="closeOpenModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
+<div *ngIf="showOpenModal" class="modal-overlay" (keydown.escape)="closeOpenModal()" tabindex="-1">
+  <div class="modal">
     <div class="modal-header">
       <h3 class="modal-title">🔓 Open Cash Register</h3>
       <button (click)="closeOpenModal()" class="modal-close">×</button>
@@ -250,8 +250,8 @@
 </div>
 
 <!-- Close Register Modal -->
-<div *ngIf="showCloseModal" class="modal-overlay" (click)="closeCloseModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
+<div *ngIf="showCloseModal" class="modal-overlay" (keydown.escape)="closeCloseModal()" tabindex="-1">
+  <div class="modal">
     <div class="modal-header">
       <h3 class="modal-title">🔒 Close Cash Register</h3>
       <button (click)="closeCloseModal()" class="modal-close">×</button>

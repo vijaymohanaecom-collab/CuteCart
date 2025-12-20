@@ -142,8 +142,8 @@
 </div>
 
 <!-- Add Expense Modal -->
-<div *ngIf="showAddModal" class="modal-overlay" (click)="closeAddModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
+<div *ngIf="showAddModal" class="modal-overlay" (keydown.escape)="closeAddModal()" tabindex="-1">
+  <div class="modal">
     <div class="modal-header">
       <h3 class="modal-title">Add New Expense</h3>
       <button (click)="closeAddModal()" class="modal-close">×</button>
@@ -220,8 +220,8 @@
 </div>
 
 <!-- Edit Expense Modal -->
-<div *ngIf="showEditModal && editExpense" class="modal-overlay" (click)="closeEditModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
+<div *ngIf="showEditModal && editExpense" class="modal-overlay" (keydown.escape)="closeEditModal()" tabindex="-1">
+  <div class="modal">
     <div class="modal-header">
       <h3 class="modal-title">Edit Expense</h3>
       <button (click)="closeEditModal()" class="modal-close">×</button>

@@ -170,8 +170,8 @@
 </div>
 
 <!-- Invoice Modal -->
-<div *ngIf="showModal && selectedInvoice" class="modal-overlay" (click)="closeModal()">
-  <div class="modal" style="max-width: 800px;" (click)="$event.stopPropagation()">
+<div *ngIf="showModal && selectedInvoice" class="modal-overlay" (keydown.escape)="closeModal()" tabindex="-1">
+  <div class="modal" style="max-width: 800px;">
     <div class="modal-header">
       <h3 class="modal-title">Invoice {{ selectedInvoice.invoice_number }}</h3>
       <button (click)="closeModal()" class="modal-close">×</button>
@@ -281,8 +281,8 @@
 </div>
 
 <!-- Edit Invoice Modal -->
-<div *ngIf="showEditModal && editInvoice" class="modal-overlay" (click)="closeEditModal()">
-  <div class="modal" style="max-width: 500px;" (click)="$event.stopPropagation()">
+<div *ngIf="showEditModal && editInvoice" class="modal-overlay" (keydown.escape)="closeEditModal()" tabindex="-1">
+  <div class="modal" style="max-width: 500px;">
     <div class="modal-header">
       <h3 class="modal-title">Edit Invoice {{ editInvoice.invoice_number }}</h3>
       <button (click)="closeEditModal()" class="modal-close">×</button>

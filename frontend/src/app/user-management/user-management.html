@@ -38,8 +38,8 @@
 </div>
 
 <!-- Modal -->
-<div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
+<div *ngIf="showModal" class="modal-overlay" (keydown.escape)="closeModal()" tabindex="-1">
+  <div class="modal">
     <div class="modal-header">
       <h3 class="modal-title">{{ editMode ? 'Edit' : 'Add' }} User</h3>
       <button (click)="closeModal()" class="modal-close">×</button>
