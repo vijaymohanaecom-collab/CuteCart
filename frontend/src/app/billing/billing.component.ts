@@ -215,7 +215,7 @@ export class BillingComponent implements OnInit, OnDestroy {
   }
 
   loadCustomers(): void {
-    this.apiService.getCustomers().subscribe({
+    this.apiService.getCustomersList().subscribe({
       next: (customers) => {
         this.customers = customers;
       },
@@ -464,7 +464,7 @@ export class BillingComponent implements OnInit, OnDestroy {
   }
   
   startEditingTabName(tab: CartTab): void {
-    tab.isEditing = true;
+    this.cartTabService.updateTabEditingState(tab.id, true);
     this.cdr.detectChanges();
   }
   
@@ -472,7 +472,7 @@ export class BillingComponent implements OnInit, OnDestroy {
     if (newName.trim()) {
       this.cartTabService.updateTabName(tab.id, newName.trim());
     }
-    tab.isEditing = false;
+    this.cartTabService.updateTabEditingState(tab.id, false);
   }
   
   getTabItemCount(tab: CartTab): number {

@@ -361,13 +361,54 @@ td {
 }
 
 .status-badge.closed {
-  background: #d1fae5;
-  color: #065f46;
+  background: #10b981;
+  color: white;
 }
 
 .status-badge.open {
+  background: #f59e0b;
+  color: white;
+}
+
+.status-badge.auto-closed {
+  background: #8b5cf6;
+  color: white;
+}
+
+.auto-closed-notice {
   background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
   color: #92400e;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.auto-opened-notice {
+  background: #dbeafe;
+  border: 1px solid #3b82f6;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  color: #1e40af;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.warning-box {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #92400e;
+  font-size: 0.95rem;
 }
 
 .no-results {

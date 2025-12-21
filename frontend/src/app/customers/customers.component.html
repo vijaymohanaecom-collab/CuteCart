@@ -1,0 +1,186 @@
+<div class="customers-container">
+  <div class="page-header">
+    <h1>👥 Customers</h1>
+    <div class="header-actions">
+      <button class="btn btn-success" (click)="downloadCSV()">
+        📥 Download CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-grid">
+    <div class="stat-card stat-primary">
+      <div class="stat-icon">👥</div>
+      <div class="stat-content">
+        <div class="stat-label">Total Customers</div>
+        <div class="stat-value">{{ statistics.totalCustomers }}</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-success">
+      <div class="stat-icon">✨</div>
+      <div class="stat-content">
+        <div class="stat-label">New Customers</div>
+        <div class="stat-value">{{ statistics.newCustomers }}</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-info">
+      <div class="stat-icon">🔥</div>
+      <div class="stat-content">
+        <div class="stat-label">Active Customers</div>
+        <div class="stat-value">{{ statistics.activeCustomers }}</div>
+        <div class="stat-sublabel">(Last 7 days)</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-warning">
+      <div class="stat-icon">😴</div>
+      <div class="stat-content">
+        <div class="stat-label">Inactive Customers</div>
+        <div class="stat-value">{{ statistics.inactiveCustomers }}</div>
+        <div class="stat-sublabel">(Over 7 days)</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-purple">
+      <div class="stat-icon">💰</div>
+      <div class="stat-content">
+        <div class="stat-label">Avg Purchase Value</div>
+        <div class="stat-value">{{ formatCurrency(statistics.avgPurchaseValue) }}</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-gradient" *ngIf="statistics.topCustomer">
+      <div class="stat-icon">👑</div>
+      <div class="stat-content">
+        <div class="stat-label">Top Customer</div>
+        <div class="stat-value" style="font-size: 18px;">{{ statistics.topCustomer.customer_name }}</div>
+        <div class="stat-sublabel">{{ formatCurrency(statistics.topCustomer.total_spent) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label class="filter-label">Search</label>
+        <input 
+          type="text" 
+          class="filter-input" 
+          placeholder="Search by name or phone..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange()"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Status</label>
+        <select 
+          class="filter-select" 
+          [(ngModel)]="statusFilter"
+          (change)="onStatusFilterChange()"
+        >
+          <option value="all">All Customers</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Start Date</label>
+        <input 
+          type="date" 
+          class="filter-input" 
+          [(ngModel)]="startDate"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">End Date</label>
+        <input 
+          type="date" 
+          class="filter-input" 
+          [(ngModel)]="endDate"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">&nbsp;</label>
+        <button class="btn btn-primary" (click)="onDateFilterApply()" [disabled]="!startDate || !endDate">
+          Apply
+        </button>
+      </div>
+
+      <div class="filter-group" *ngIf="startDate || endDate">
+        <label class="filter-label">&nbsp;</label>
+        <button class="btn btn-secondary" (click)="clearDateFilter()">
+          Clear
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-results">
+      Showing <strong>{{ filteredCustomers.length }}</strong> of <strong>{{ customers.length }}</strong> customers
+    </div>
+  </div>
+
+  <!-- Customers Table -->
+  <div class="table-container">
+    <table class="customers-table" *ngIf="!loading && filteredCustomers.length > 0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Status</th>
+          <th>Total Purchases</th>
+          <th>Total Spent</th>
+          <th>Avg Purchase</th>
+          <th>First Purchase</th>
+          <th>Last Purchase</th>
+          <th>Days Since</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let customer of filteredCustomers">
+          <td class="customer-name">{{ customer.customer_name }}</td>
+          <td>{{ customer.customer_phone || '-' }}</td>
+          <td>
+            <span 
+              class="status-badge" 
+              [class.status-active]="customer.status === 'active'"
+              [class.status-inactive]="customer.status === 'inactive'"
+            >
+              {{ customer.status === 'active' ? '🔥 Active' : '😴 Inactive' }}
+            </span>
+          </td>
+          <td class="text-center">{{ customer.total_purchases }}</td>
+          <td class="text-right">{{ formatCurrency(customer.total_spent) }}</td>
+          <td class="text-right">{{ formatCurrency(customer.avg_purchase_value) }}</td>
+          <td>{{ formatDate(customer.first_purchase_date) }}</td>
+          <td>{{ formatDate(customer.last_purchase_date) }}</td>
+          <td class="text-center">
+            <span 
+              class="days-badge"
+              [class.days-recent]="getDaysSinceLastPurchase(customer.last_purchase_date) <= 7"
+              [class.days-old]="getDaysSinceLastPurchase(customer.last_purchase_date) > 7"
+            >
+              {{ getDaysSinceLastPurchase(customer.last_purchase_date) }} days
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="loading-state" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Loading customers...</p>
+    </div>
+
+    <div class="no-results" *ngIf="!loading && filteredCustomers.length === 0">
+      <p>No customers found</p>
+    </div>
+  </div>
+</div>

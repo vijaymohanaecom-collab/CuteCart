@@ -38,6 +38,28 @@ export class ApiService {
     return this.http.delete(`${this.apiUrl}/products/${id}`);
   }
 
+  addStock(productId: string | number, data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/products/${productId}/add-stock`, data);
+  }
+
+  getStockHistory(productId: string | number, limit?: number): Observable<any[]> {
+    const url = limit 
+      ? `${this.apiUrl}/products/${productId}/stock-history?limit=${limit}` 
+      : `${this.apiUrl}/products/${productId}/stock-history`;
+    return this.http.get<any[]>(url);
+  }
+
+  getStockSummary(productId: string | number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/products/${productId}/stock-summary`);
+  }
+
+  getAllStockHistory(limit?: number): Observable<any[]> {
+    const url = limit 
+      ? `${this.apiUrl}/products/stock-history/all?limit=${limit}` 
+      : `${this.apiUrl}/products/stock-history/all`;
+    return this.http.get<any[]>(url);
+  }
+
   exportProductsCSV(): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/products/export/csv`, { 
       responseType: 'blob' 
@@ -46,6 +68,68 @@ export class ApiService {
 
   importProductsCSV(csvData: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/products/import/csv`, { csvData });
+  }
+
+  // Customers
+  getCustomers(startDate?: string, endDate?: string): Observable<any[]> {
+    let url = `${this.apiUrl}/customers`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+    return this.http.get<any[]>(url);
+  }
+
+  getCustomerStatistics(startDate?: string, endDate?: string): Observable<any> {
+    let url = `${this.apiUrl}/customers/statistics`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+    return this.http.get<any>(url);
+  }
+
+  exportCustomersCSV(startDate?: string, endDate?: string): Observable<Blob> {
+    let url = `${this.apiUrl}/customers/export/csv`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+    return this.http.get(url, { responseType: 'blob' });
+  }
+
+  // Investments
+  getInvestments(startDate?: string, endDate?: string, person?: string): Observable<any[]> {
+    let url = `${this.apiUrl}/investments?`;
+    const params = [];
+    if (startDate && endDate) {
+      params.push(`startDate=${startDate}&endDate=${endDate}`);
+    }
+    if (person) {
+      params.push(`person=${encodeURIComponent(person)}`);
+    }
+    return this.http.get<any[]>(url + params.join('&'));
+  }
+
+  getInvestmentStatistics(startDate?: string, endDate?: string): Observable<any> {
+    let url = `${this.apiUrl}/investments/statistics`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+    return this.http.get<any>(url);
+  }
+
+  getInvestmentPersons(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/investments/persons`);
+  }
+
+  createInvestment(investment: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/investments`, investment);
+  }
+
+  updateInvestment(id: number, investment: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/investments/${id}`, investment);
+  }
+
+  deleteInvestment(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/investments/${id}`);
   }
 
   // Invoices
@@ -81,7 +165,7 @@ export class ApiService {
     return this.http.get<any[]>(`${this.apiUrl}/invoices/stats/categories`);
   }
 
-  getCustomers(): Observable<{customer_name: string, customer_phone: string}[]> {
+  getCustomersList(): Observable<{customer_name: string, customer_phone: string}[]> {
     return this.http.get<{customer_name: string, customer_phone: string}[]>(`${this.apiUrl}/invoices/customers/list`);
   }
 
@@ -309,5 +393,39 @@ export class ApiService {
 
   deleteCashRegister(date: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/cash-register/${date}`);
+  }
+
+  runCashRegisterAutomation(): Observable<any> {
+    return this.http.post(`${this.apiUrl}/cash-register/automation/run`, {});
+  }
+
+  autoCloseYesterday(): Observable<any> {
+    return this.http.post(`${this.apiUrl}/cash-register/automation/auto-close-yesterday`, {});
+  }
+
+  autoOpenToday(): Observable<any> {
+    return this.http.post(`${this.apiUrl}/cash-register/automation/auto-open-today`, {});
+  }
+
+  // Notifications
+  getNotifications(limit?: number): Observable<any[]> {
+    const url = limit ? `${this.apiUrl}/notifications?limit=${limit}` : `${this.apiUrl}/notifications`;
+    return this.http.get<any[]>(url);
+  }
+
+  getUnreadNotifications(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/notifications/unread`);
+  }
+
+  markNotificationAsRead(id: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/notifications/${id}/read`, {});
+  }
+
+  markAllNotificationsAsRead(): Observable<any> {
+    return this.http.put(`${this.apiUrl}/notifications/read-all`, {});
+  }
+
+  deleteNotification(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/notifications/${id}`);
   }
 }

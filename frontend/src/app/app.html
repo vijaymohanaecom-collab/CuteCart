@@ -42,6 +42,12 @@
           <span>Sales</span>
         </a>
       </li>
+      <li *ngIf="authService.isManager()">
+        <a routerLink="/customers" [class.active]="isActive('/customers')" class="sidebar-link" (click)="closeSidebarOnMobile()">
+          <span class="nav-icon">👥</span>
+          <span>Customers</span>
+        </a>
+      </li>
       <li>
         <a routerLink="/expenses" [class.active]="isActive('/expenses')" class="sidebar-link" (click)="closeSidebarOnMobile()">
           <span class="nav-icon">💸</span>
@@ -52,6 +58,12 @@
         <a routerLink="/other-income" [class.active]="isActive('/other-income')" class="sidebar-link" (click)="closeSidebarOnMobile()">
           <span class="nav-icon">💰</span>
           <span>Other Income</span>
+        </a>
+      </li>
+      <li *ngIf="authService.isManager()">
+        <a routerLink="/investments" [class.active]="isActive('/investments')" class="sidebar-link" (click)="closeSidebarOnMobile()">
+          <span class="nav-icon">💼</span>
+          <span>Investments</span>
         </a>
       </li>
       <li>

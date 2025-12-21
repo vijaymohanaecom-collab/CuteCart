@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { dbRun, dbGet, dbAll } = require('../config/database');
+const stockService = require('../services/stock.service');
 
 // Get all products
 router.get('/', async (req, res) => {
@@ -40,10 +41,20 @@ router.post('/', async (req, res) => {
       productId = lastProduct ? String(parseInt(lastProduct.id) + 1) : '1';
     }
 
-    // Check for duplicate
+    // Check for duplicate ID
     const existing = await dbGet('SELECT id FROM products WHERE id = ?', [productId]);
     if (existing) {
       return res.status(400).json({ error: 'Product ID already exists' });
+    }
+
+    // Check for duplicate barcode (if barcode is provided)
+    if (barcode && barcode.trim()) {
+      const existingBarcode = await dbGet('SELECT id, name FROM products WHERE barcode = ?', [barcode.trim()]);
+      if (existingBarcode) {
+        return res.status(400).json({ 
+          error: `Barcode already exists for product: ${existingBarcode.name} (ID: ${existingBarcode.id})` 
+        });
+      }
     }
 
     await dbRun(
@@ -62,6 +73,19 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { name, description, price, purchase_price, stock, barcode, category } = req.body;
+
+    // Check for duplicate barcode (if barcode is provided and changed)
+    if (barcode && barcode.trim()) {
+      const existingBarcode = await dbGet(
+        'SELECT id, name FROM products WHERE barcode = ? AND id != ?', 
+        [barcode.trim(), req.params.id]
+      );
+      if (existingBarcode) {
+        return res.status(400).json({ 
+          error: `Barcode already exists for product: ${existingBarcode.name} (ID: ${existingBarcode.id})` 
+        });
+      }
+    }
 
     await dbRun(
       'UPDATE products SET name = ?, description = ?, price = ?, purchase_price = ?, stock = ?, barcode = ?, category = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
@@ -235,6 +259,74 @@ router.post('/import/csv', async (req, res) => {
       total: dataLines.length,
       errors: errors.length > 0 ? errors : undefined
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add stock to product
+router.post('/:id/add-stock', async (req, res) => {
+  try {
+    const { quantity, purchase_price, sale_price, notes, added_by } = req.body;
+
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({ error: 'Quantity must be greater than 0' });
+    }
+
+    if (purchase_price === undefined || purchase_price < 0) {
+      return res.status(400).json({ error: 'Purchase price is required and must be non-negative' });
+    }
+
+    if (sale_price === undefined || sale_price < 0) {
+      return res.status(400).json({ error: 'Sale price is required and must be non-negative' });
+    }
+
+    const result = await stockService.addStock(
+      req.params.id,
+      parseInt(quantity),
+      parseFloat(purchase_price),
+      parseFloat(sale_price),
+      notes || '',
+      added_by || ''
+    );
+
+    res.json({
+      success: true,
+      message: 'Stock added successfully',
+      ...result
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all stock history (must come before /:id/stock-history to avoid route conflicts)
+router.get('/stock-history/all', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const batches = await stockService.getAllStockHistory(limit);
+    res.json(batches);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get stock history for a product
+router.get('/:id/stock-history', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const batches = await stockService.getStockHistory(req.params.id, limit);
+    res.json(batches);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get stock summary for a product
+router.get('/:id/stock-summary', async (req, res) => {
+  try {
+    const summary = await stockService.getProductStockSummary(req.params.id);
+    res.json(summary);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

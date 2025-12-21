@@ -225,6 +225,20 @@ export class CartTabService {
     this.updateState({ tabs: updatedTabs });
   }
 
+  updateTabEditingState(tabId: string, isEditing: boolean): void {
+    const state = this.stateSubject.value;
+    const tabIndex = state.tabs.findIndex(tab => tab.id === tabId);
+    if (tabIndex === -1) return;
+
+    const updatedTabs = [...state.tabs];
+    updatedTabs[tabIndex] = {
+      ...updatedTabs[tabIndex],
+      isEditing
+    };
+
+    this.updateState({ tabs: updatedTabs });
+  }
+
   calculateTabTotals(tab: CartTab): { subtotal: number; taxAmount: number; total: number } {
     const subtotal = tab.items.reduce((sum, item) => sum + item.total_price, 0);
     const taxAmount = (subtotal * 0) / 100; // Tax rate will be applied from settings

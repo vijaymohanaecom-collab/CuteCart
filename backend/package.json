@@ -10,7 +10,10 @@
     "init-db:dev": "node -r dotenv/config src/database/init.js dotenv_config_path=.env.development",
     "migrate:discount-presets": "node src/database/add-discount-presets.js",
     "migrate:expenses": "node src/database/create-expenses-table.js",
-    "migrate:staff": "node src/database/create-staff-tables.js"
+    "migrate:staff": "node src/database/create-staff-tables.js",
+    "migrate:cash-register-automation": "node src/database/migrate-cash-register-automation.js",
+    "migrate:stock-batches": "node src/database/create-stock-batches-table.js",
+    "migrate:investments": "node src/database/create-investments-table.js"
   },
   "keywords": [],
   "author": "",

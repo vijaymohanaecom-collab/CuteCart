@@ -41,11 +41,23 @@ initDatabase();
 // Initialize backup service and scheduler
 const backupService = require('./services/backup.service');
 const { scheduleBackups } = require('./jobs/backup.job');
+const { scheduleCashRegisterAutomation } = require('./jobs/cash-register.job');
 
 // Initialize Google Drive (if configured)
 backupService.initializeDrive().then(async () => {
   // Schedule automatic backups
   scheduleBackups();
+  
+  // Schedule cash register automation
+  scheduleCashRegisterAutomation();
+  
+  // Run startup automation check (in case server was down at midnight)
+  const cashRegisterAutomation = require('./services/cash-register-automation.service');
+  try {
+    await cashRegisterAutomation.checkAndRunStartupAutomation();
+  } catch (error) {
+    console.error('Failed to run startup automation check:', error.message);
+  }
   
   // Create backup on startup (if enabled)
   if (process.env.BACKUP_ON_STARTUP === 'true') {
@@ -63,11 +75,14 @@ backupService.initializeDrive().then(async () => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', authenticateToken, require('./routes/products'));
 app.use('/api/invoices', authenticateToken, require('./routes/invoices'));
-app.use('/api/users', authenticateToken, require('./routes/users'));
+app.use('/api/customers', authenticateToken, require('./routes/customers'));
+app.use('/api/investments', authenticateToken, require('./routes/investments'));
+app.use('/api/reports', authenticateToken, require('./routes/reports'));
 app.use('/api/settings', authenticateToken, require('./routes/settings'));
 app.use('/api/expenses', authenticateToken, require('./routes/expenses'));
 app.use('/api/other-income', authenticateToken, require('./routes/other-income'));
 app.use('/api/cash-register', authenticateToken, require('./routes/cash-register'));
+app.use('/api/notifications', authenticateToken, require('./routes/notifications'));
 app.use('/api/staff', authenticateToken, require('./routes/staff'));
 app.use('/api/attendance', authenticateToken, require('./routes/attendance'));
 app.use('/api/backup', authenticateToken, require('./routes/backup'));

@@ -17,6 +17,9 @@ export interface CashRegister {
   created_at?: string;
   updated_at?: string;
   closed_at?: string;
+  status?: string;
+  is_auto_closed?: number;
+  is_auto_opened?: number;
 }
 
 export interface TodayCashData {
@@ -42,6 +45,12 @@ export class CashRegisterComponent implements OnInit {
   showOpenModal = false;
   showCloseModal = false;
   showHistoryModal = false;
+  showEditModal = false;
+  
+  editingEntry: CashRegister | null = null;
+  editOpeningCash: number = 0;
+  editClosingCash: number = 0;
+  editNotes: string = '';
   
   openingCash: number = 0;
   closingCash: number = 0;
@@ -330,5 +339,61 @@ export class CashRegisterComponent implements OnInit {
     if (difference > 0) return 'positive';
     if (difference < 0) return 'negative';
     return 'zero';
+  }
+
+  getStatusBadgeClass(entry: CashRegister): string {
+    if (entry.is_auto_closed) return 'status-badge auto-closed';
+    if (entry.closing_cash !== null && entry.closing_cash !== undefined) return 'status-badge closed';
+    return 'status-badge open';
+  }
+
+  getStatusText(entry: CashRegister): string {
+    if (entry.is_auto_closed) return 'Auto-Closed';
+    if (entry.closing_cash !== null && entry.closing_cash !== undefined) return 'Closed';
+    return 'Open';
+  }
+
+  openEditModal(entry: CashRegister): void {
+    this.editingEntry = { ...entry };
+    this.editOpeningCash = entry.opening_cash;
+    this.editClosingCash = entry.closing_cash || 0;
+    this.editNotes = entry.notes || '';
+    this.showEditModal = true;
+  }
+
+  closeEditModal(): void {
+    this.showEditModal = false;
+    this.editingEntry = null;
+    this.editOpeningCash = 0;
+    this.editClosingCash = 0;
+    this.editNotes = '';
+  }
+
+  saveEdit(): void {
+    if (!this.editingEntry) return;
+
+    const updateData: any = {
+      opening_cash: this.editOpeningCash,
+      notes: this.editNotes
+    };
+
+    if (this.editingEntry.closing_cash !== null && this.editingEntry.closing_cash !== undefined) {
+      updateData.closing_cash = this.editClosingCash;
+    }
+
+    this.apiService.updateCashRegister(this.editingEntry.date, updateData).subscribe({
+      next: () => {
+        this.loadHistory();
+        if (this.editingEntry?.date === this.todayDate) {
+          this.loadTodayData();
+        }
+        this.closeEditModal();
+        alert('Cash register entry updated successfully');
+      },
+      error: (err) => {
+        console.error('Error updating entry:', err);
+        alert('Failed to update entry. Please try again.');
+      }
+    });
   }
 }

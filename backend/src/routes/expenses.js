@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { dbAll, dbGet, dbRun } = require('../config/database');
+const cashRegisterAutomation = require('../services/cash-register-automation.service');
 
 // Get all expenses
 router.get('/', async (req, res) => {
@@ -68,6 +69,13 @@ router.post('/', async (req, res) => {
     );
     
     const expense = await dbGet('SELECT * FROM expenses WHERE id = ?', [result.lastID]);
+    
+    await cashRegisterAutomation.adjustCashRegisterForBackdatedExpense(
+      date,
+      amount,
+      payment_method || 'cash'
+    );
+    
     res.status(201).json(expense);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -107,6 +115,9 @@ router.put('/:id', async (req, res) => {
     );
     
     const expense = await dbGet('SELECT * FROM expenses WHERE id = ?', [req.params.id]);
+    
+    await cashRegisterAutomation.adjustCashRegisterForUpdatedExpense(existing, expense);
+    
     res.json(expense);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -123,6 +134,9 @@ router.delete('/:id', async (req, res) => {
     }
     
     await dbRun('DELETE FROM expenses WHERE id = ?', [req.params.id]);
+    
+    await cashRegisterAutomation.adjustCashRegisterForDeletedExpense(expense);
+    
     res.json({ message: 'Expense deleted successfully', expense });
   } catch (error) {
     res.status(500).json({ error: error.message });

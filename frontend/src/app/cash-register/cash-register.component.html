@@ -30,6 +30,9 @@
       </div>
 
       <div *ngIf="todayData.hasEntry" class="cash-summary">
+        <div *ngIf="todayData.entry?.is_auto_opened" class="auto-opened-notice">
+          ℹ️ This register was automatically opened with yesterday's closing balance.
+        </div>
         <div class="summary-grid">
           <div class="summary-item">
             <div class="summary-label">Opening Cash</div>
@@ -72,9 +75,15 @@
           </div>
 
           <div class="closed-info">
-            <span class="closed-badge">✓ Closed</span>
+            <span class="closed-badge" [class.auto-closed]="todayData.entry?.is_auto_closed">
+              <span *ngIf="!todayData.entry?.is_auto_closed">✓ Closed</span>
+              <span *ngIf="todayData.entry?.is_auto_closed">🤖 Auto-Closed</span>
+            </span>
             <span class="closed-time">{{ todayData.entry?.closed_at | date:'hh:mm a' }}</span>
             <span class="closed-by" *ngIf="todayData.entry?.closed_by">by {{ todayData.entry?.closed_by }}</span>
+          </div>
+          <div *ngIf="todayData.entry?.is_auto_closed && isManager" class="auto-closed-notice">
+            ⚠️ This register was automatically closed. Please verify and edit if needed.
           </div>
         </div>
       </div>
@@ -185,10 +194,10 @@
               <span *ngIf="entry.difference === null || entry.difference === undefined">-</span>
             </td>
             <td>
-              <span *ngIf="entry.closing_cash !== null && entry.closing_cash !== undefined" class="status-badge closed">Closed</span>
-              <span *ngIf="entry.closing_cash === null || entry.closing_cash === undefined" class="status-badge open">Open</span>
+              <span [ngClass]="getStatusBadgeClass(entry)">{{ getStatusText(entry) }}</span>
             </td>
             <td *ngIf="isManager">
+              <button (click)="openEditModal(entry)" class="btn btn-sm btn-primary" style="margin-right: 5px;">Edit</button>
               <button (click)="deleteEntry(entry)" class="btn btn-sm btn-danger">Delete</button>
             </td>
           </tr>
@@ -245,6 +254,66 @@
     <div class="modal-footer">
       <button (click)="openRegister()" class="btn btn-primary">Open Register</button>
       <button (click)="closeOpenModal()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Register Modal -->
+<div *ngIf="showEditModal" class="modal-overlay" (keydown.escape)="closeEditModal()" tabindex="-1">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">✏️ Edit Cash Register Entry</h3>
+      <button (click)="closeEditModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="text" class="form-control" [value]="editingEntry?.date | date:'dd MMM yyyy'" readonly />
+      </div>
+
+      <div *ngIf="editingEntry?.is_auto_closed" class="warning-box">
+        ⚠️ This entry was auto-closed by the system. Please verify the values.
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Opening Cash (₹) *</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          [(ngModel)]="editOpeningCash"
+          min="0"
+          step="0.01"
+          required
+        />
+      </div>
+
+      <div *ngIf="editingEntry?.closing_cash !== null && editingEntry?.closing_cash !== undefined" class="form-group">
+        <label class="form-label">Closing Cash (₹) *</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          [(ngModel)]="editClosingCash"
+          min="0"
+          step="0.01"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea 
+          class="form-control" 
+          [(ngModel)]="editNotes"
+          rows="3"
+          placeholder="Optional notes"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="saveEdit()" class="btn btn-primary">Save Changes</button>
+      <button (click)="closeEditModal()" class="btn btn-secondary">Cancel</button>
     </div>
   </div>
 </div>

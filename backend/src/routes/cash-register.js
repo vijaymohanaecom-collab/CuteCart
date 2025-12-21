@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { dbAll, dbGet, dbRun } = require('../config/database');
+const cashRegisterAutomation = require('../services/cash-register-automation.service');
 
 // Get all cash register entries
 router.get('/', async (req, res) => {
@@ -266,6 +267,55 @@ router.delete('/:date', async (req, res) => {
     
     await dbRun('DELETE FROM cash_register WHERE date = ?', [req.params.date]);
     res.json({ message: 'Cash register entry deleted successfully', entry });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Trigger manual automation (for testing or manual run)
+router.post('/automation/run', async (req, res) => {
+  try {
+    const results = await cashRegisterAutomation.runDailyAutomation();
+    res.json({
+      message: 'Cash register automation completed',
+      results
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Auto-close yesterday's register
+router.post('/automation/auto-close-yesterday', async (req, res) => {
+  try {
+    const result = await cashRegisterAutomation.autoCloseYesterdayRegister();
+    
+    if (!result) {
+      return res.json({ message: 'No action needed - register already closed or not found' });
+    }
+    
+    res.json({
+      message: 'Yesterday\'s register auto-closed successfully',
+      result
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Auto-open today's register
+router.post('/automation/auto-open-today', async (req, res) => {
+  try {
+    const result = await cashRegisterAutomation.autoOpenTodayRegister();
+    
+    if (!result) {
+      return res.json({ message: 'No action needed - register already opened' });
+    }
+    
+    res.json({
+      message: 'Today\'s register auto-opened successfully',
+      result
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

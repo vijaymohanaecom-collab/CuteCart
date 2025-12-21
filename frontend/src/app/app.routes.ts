@@ -30,6 +30,18 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   { 
+    path: 'customers', 
+    loadComponent: () => import('./customers/customers.component').then(m => m.CustomersComponent),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['admin', 'manager'] }
+  },
+  { 
+    path: 'investments', 
+    loadComponent: () => import('./investments/investments.component').then(m => m.InvestmentsComponent),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['admin', 'manager'] }
+  },
+  { 
     path: 'expenses', 
     loadComponent: () => import('./expenses/expenses.component').then(m => m.ExpensesComponent),
     canActivate: [authGuard, roleGuard],

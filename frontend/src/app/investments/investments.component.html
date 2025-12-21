@@ -1,0 +1,244 @@
+<div class="investments-container">
+  <div class="page-header">
+    <h1>💼 Investments</h1>
+    <button class="btn btn-primary" (click)="openAddModal()">
+      ➕ Add Investment
+    </button>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-grid">
+    <div class="stat-card stat-primary">
+      <div class="stat-icon">💰</div>
+      <div class="stat-content">
+        <div class="stat-label">Total Investments</div>
+        <div class="stat-value">{{ formatCurrency(statistics.totalAmount) }}</div>
+        <div class="stat-sublabel">{{ statistics.totalInvestments }} entries</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-success">
+      <div class="stat-icon">📅</div>
+      <div class="stat-content">
+        <div class="stat-label">This Month</div>
+        <div class="stat-value">{{ formatCurrency(statistics.thisMonthAmount) }}</div>
+        <div class="stat-sublabel">{{ statistics.thisMonthInvestments }} entries</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-info">
+      <div class="stat-icon">🕐</div>
+      <div class="stat-content">
+        <div class="stat-label">Last 30 Days</div>
+        <div class="stat-value">{{ formatCurrency(statistics.recentAmount) }}</div>
+        <div class="stat-sublabel">{{ statistics.recentInvestments }} entries</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-gradient" *ngIf="statistics.topInvestor">
+      <div class="stat-icon">👑</div>
+      <div class="stat-content">
+        <div class="stat-label">Top Investor</div>
+        <div class="stat-value" style="font-size: 18px;">{{ statistics.topInvestor.person }}</div>
+        <div class="stat-sublabel">{{ formatCurrency(statistics.topInvestor.total_amount) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Investments by Person -->
+  <div class="by-person-section" *ngIf="statistics.byPerson.length > 0">
+    <h3>Investments by Partner</h3>
+    <div class="person-grid">
+      <div class="person-card" *ngFor="let item of statistics.byPerson">
+        <div class="person-name">{{ item.person }}</div>
+        <div class="person-amount">{{ formatCurrency(item.total_amount) }}</div>
+        <div class="person-count">{{ item.count }} investment(s)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label class="filter-label">Search</label>
+        <input 
+          type="text" 
+          class="filter-input" 
+          placeholder="Search by description, person, or notes..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange()"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Partner</label>
+        <select 
+          class="filter-select" 
+          [(ngModel)]="personFilter"
+          (change)="onPersonFilterChange()"
+        >
+          <option value="all">All Partners</option>
+          <option *ngFor="let person of persons" [value]="person">{{ person }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Start Date</label>
+        <input 
+          type="date" 
+          class="filter-input" 
+          [(ngModel)]="startDate"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">End Date</label>
+        <input 
+          type="date" 
+          class="filter-input" 
+          [(ngModel)]="endDate"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">&nbsp;</label>
+        <button class="btn btn-primary" (click)="onDateFilterApply()" [disabled]="!startDate || !endDate">
+          Apply
+        </button>
+      </div>
+
+      <div class="filter-group" *ngIf="startDate || endDate">
+        <label class="filter-label">&nbsp;</label>
+        <button class="btn btn-secondary" (click)="clearDateFilter()">
+          Clear
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-results">
+      Showing <strong>{{ filteredInvestments.length }}</strong> of <strong>{{ investments.length }}</strong> investments
+    </div>
+  </div>
+
+  <!-- Investments Table -->
+  <div class="table-container">
+    <table class="investments-table" *ngIf="!loading && filteredInvestments.length > 0">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Partner</th>
+          <th>Description</th>
+          <th>Amount</th>
+          <th>Notes</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let investment of filteredInvestments">
+          <td>{{ formatDate(investment.date) }}</td>
+          <td class="partner-name">{{ investment.person }}</td>
+          <td>{{ investment.description }}</td>
+          <td class="text-right amount-cell">{{ formatCurrency(investment.amount) }}</td>
+          <td class="notes-cell">{{ investment.notes || '-' }}</td>
+          <td class="actions-cell">
+            <button class="btn-icon btn-edit" (click)="openEditModal(investment)" title="Edit">
+              ✏️
+            </button>
+            <button class="btn-icon btn-delete" (click)="deleteInvestment(investment)" title="Delete">
+              🗑️
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="loading-state" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Loading investments...</p>
+    </div>
+
+    <div class="no-results" *ngIf="!loading && filteredInvestments.length === 0">
+      <p>No investments found</p>
+      <button class="btn btn-primary" (click)="openAddModal()">Add First Investment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Investment Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ editMode ? 'Edit Investment' : 'Add Investment' }}</h2>
+      <button class="close-btn" (click)="closeModal()">×</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Date *</label>
+        <input 
+          type="date" 
+          class="form-control" 
+          [(ngModel)]="currentInvestment.date"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Partner Name *</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          [(ngModel)]="currentInvestment.person"
+          placeholder="Enter partner name"
+          list="persons-list"
+          required
+        />
+        <datalist id="persons-list">
+          <option *ngFor="let person of persons" [value]="person">
+        </datalist>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          [(ngModel)]="currentInvestment.description"
+          placeholder="Enter description"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Amount (₹) *</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          [(ngModel)]="currentInvestment.amount"
+          placeholder="0.00"
+          step="0.01"
+          min="0"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea 
+          class="form-control" 
+          [(ngModel)]="currentInvestment.notes"
+          placeholder="Additional notes (optional)"
+          rows="3"
+        ></textarea>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+      <button class="btn btn-primary" (click)="saveInvestment()">
+        {{ editMode ? 'Update' : 'Save' }}
+      </button>
+    </div>
+  </div>
+</div>

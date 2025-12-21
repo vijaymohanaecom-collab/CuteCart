@@ -1,0 +1,192 @@
+<!-- Add Stock Modal -->
+<div *ngIf="showStockModal" class="modal-overlay" (keydown.escape)="closeStockModal()" tabindex="-1">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">📦 Add Stock - {{ stockProduct?.name }}</h3>
+      <button (click)="closeStockModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="current-info-box">
+        <h4>Current Product Info</h4>
+        <div class="info-row">
+          <span class="info-label">Current Stock:</span>
+          <span class="info-value">{{ stockProduct?.stock || 0 }} units</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Avg Purchase Price:</span>
+          <span class="info-value">₹{{ stockProduct?.purchase_price || 0 | number:'1.2-2' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Current Sale Price:</span>
+          <span class="info-value">₹{{ stockProduct?.price || 0 | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Quantity to Add *</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          [(ngModel)]="stockQuantity"
+          min="1"
+          step="1"
+          placeholder="Enter quantity"
+          required
+          autofocus
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Purchase Price (per unit) *</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          [(ngModel)]="stockPurchasePrice"
+          (ngModelChange)="onStockPurchasePriceChange()"
+          min="0"
+          step="0.01"
+          placeholder="Enter purchase price"
+          required
+        />
+        <small class="form-text">
+          <span *ngIf="stockPurchasePrice !== stockProduct?.purchase_price && stockProduct?.purchase_price">
+            ⚠️ Different from current avg (₹{{ stockProduct?.purchase_price | number:'1.2-2' }}). 
+            System will calculate new average.
+          </span>
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Sale Price (per unit) *</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          [(ngModel)]="stockSalePrice"
+          min="0"
+          step="0.01"
+          placeholder="Enter sale price"
+          required
+        />
+        <small class="form-text">
+          Auto-calculated with 40% margin. You can adjust manually.
+          <span *ngIf="stockSalePrice !== stockProduct?.price && stockProduct?.price">
+            ⚠️ Different from current price (₹{{ stockProduct?.price | number:'1.2-2' }})
+          </span>
+        </small>
+      </div>
+
+      <div class="form-group" *ngIf="stockPurchasePrice > 0 && stockSalePrice > 0">
+        <div class="profit-info-box">
+          <div class="profit-row">
+            <span>Profit per unit:</span>
+            <strong [class.profit-positive]="stockSalePrice > stockPurchasePrice" 
+                    [class.profit-negative]="stockSalePrice < stockPurchasePrice">
+              ₹{{ (stockSalePrice - stockPurchasePrice) | number:'1.2-2' }}
+            </strong>
+          </div>
+          <div class="profit-row">
+            <span>Profit margin:</span>
+            <strong [class.profit-positive]="stockSalePrice > stockPurchasePrice" 
+                    [class.profit-negative]="stockSalePrice < stockPurchasePrice">
+              {{ stockPurchasePrice > 0 ? (((stockSalePrice - stockPurchasePrice) / stockPurchasePrice) * 100) : 0 | number:'1.2-2' }}%
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes (Optional)</label>
+        <textarea 
+          class="form-control" 
+          [(ngModel)]="stockNotes"
+          rows="3"
+          placeholder="Add any notes about this stock addition..."
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="closeStockModal()" class="btn btn-secondary">Cancel</button>
+      <button (click)="addStock()" class="btn btn-success">Add Stock</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stock History Modal -->
+<div *ngIf="showStockHistoryModal" class="modal-overlay" (keydown.escape)="closeStockHistoryModal()" tabindex="-1">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h3 class="modal-title">📊 Stock History - {{ stockProduct?.name }}</h3>
+      <button (click)="closeStockHistoryModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="stock-summary" *ngIf="stockSummary">
+        <h4>Summary</h4>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <span class="summary-label">Current Stock:</span>
+            <span class="summary-value">{{ stockSummary.currentStock }} units</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Avg Purchase Price:</span>
+            <span class="summary-value">₹{{ stockSummary.avgPurchasePrice | number:'1.2-2' }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Sale Price:</span>
+            <span class="summary-value">₹{{ stockSummary.salePrice | number:'1.2-2' }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Profit/Unit:</span>
+            <span class="summary-value" [class.profit-positive]="stockSummary.profitPerUnit > 0" 
+                  [class.profit-negative]="stockSummary.profitPerUnit < 0">
+              ₹{{ stockSummary.profitPerUnit | number:'1.2-2' }} ({{ stockSummary.profitMarginPercent | number:'1.2-2' }}%)
+            </span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Total Batches:</span>
+            <span class="summary-value">{{ stockSummary.totalBatches }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Total Stock Added:</span>
+            <span class="summary-value">{{ stockSummary.totalStockAdded }} units</span>
+          </div>
+        </div>
+      </div>
+
+      <h4 style="margin-top: 1.5rem;">Recent Stock Additions</h4>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Quantity</th>
+              <th>Purchase Price</th>
+              <th>Sale Price</th>
+              <th>Notes</th>
+              <th>Added By</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let batch of stockHistory">
+              <td>{{ batch.created_at | date:'dd MMM yyyy, hh:mm a' }}</td>
+              <td><strong>{{ batch.quantity }}</strong> units</td>
+              <td>₹{{ batch.purchase_price | number:'1.2-2' }}</td>
+              <td>₹{{ batch.sale_price | number:'1.2-2' }}</td>
+              <td>{{ batch.notes || '-' }}</td>
+              <td>{{ batch.added_by || '-' }}</td>
+            </tr>
+            <tr *ngIf="stockHistory.length === 0">
+              <td colspan="6" class="no-results">No stock history found</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="closeStockHistoryModal()" class="btn btn-secondary">Close</button>
+    </div>
+  </div>
+</div>

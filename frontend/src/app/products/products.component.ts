@@ -19,6 +19,16 @@ export class ProductsComponent implements OnInit {
   editMode = false;
   currentProduct: Product = this.getEmptyProduct();
   
+  showStockModal = false;
+  showStockHistoryModal = false;
+  stockProduct: Product | null = null;
+  stockQuantity: number = 0;
+  stockPurchasePrice: number = 0;
+  stockSalePrice: number = 0;
+  stockNotes: string = '';
+  stockHistory: any[] = [];
+  stockSummary: any = null;
+  
   // Search and filter properties
   searchTerm = '';
   selectedCategory = '';
@@ -173,6 +183,105 @@ export class ProductsComponent implements OnInit {
     if (this.currentProduct.purchase_price && this.currentProduct.purchase_price > 0) {
       this.currentProduct.price = this.currentProduct.purchase_price * 1.4;
     }
+  }
+
+  onStockPurchasePriceChange(): void {
+    // Auto-calculate selling price with 40% margin if sale price is not set
+    if (this.stockPurchasePrice > 0 && this.stockSalePrice === 0) {
+      this.stockSalePrice = this.stockPurchasePrice * 1.4;
+    }
+  }
+
+  openAddStockModal(product: Product): void {
+    this.stockProduct = { ...product };
+    this.stockQuantity = 0;
+    this.stockPurchasePrice = product.purchase_price || 0;
+    this.stockSalePrice = product.price || 0;
+    this.stockNotes = '';
+    this.showStockModal = true;
+  }
+
+  closeStockModal(): void {
+    this.showStockModal = false;
+    this.stockProduct = null;
+    this.stockQuantity = 0;
+    this.stockPurchasePrice = 0;
+    this.stockSalePrice = 0;
+    this.stockNotes = '';
+  }
+
+  addStock(): void {
+    if (!this.stockProduct || !this.stockProduct.id) return;
+
+    if (this.stockQuantity <= 0) {
+      alert('Please enter a valid quantity');
+      return;
+    }
+
+    if (this.stockPurchasePrice < 0) {
+      alert('Purchase price cannot be negative');
+      return;
+    }
+
+    if (this.stockSalePrice < 0) {
+      alert('Sale price cannot be negative');
+      return;
+    }
+
+    const stockData = {
+      quantity: this.stockQuantity,
+      purchase_price: this.stockPurchasePrice,
+      sale_price: this.stockSalePrice,
+      notes: this.stockNotes,
+      added_by: 'user'
+    };
+
+    this.apiService.addStock(this.stockProduct.id, stockData).subscribe({
+      next: (response) => {
+        const msg = `Stock added successfully!\n\n` +
+          `Quantity Added: ${response.stockAdded}\n` +
+          `New Stock: ${response.newStock}\n` +
+          `Avg Purchase Price: ₹${response.newAvgPurchasePrice.toFixed(2)}\n` +
+          `Sale Price: ₹${response.newSalePrice.toFixed(2)}\n` +
+          `Profit/Unit: ₹${response.profitPerUnit.toFixed(2)} (${response.profitMarginPercent.toFixed(2)}%)`;
+        
+        alert(msg);
+        this.loadProducts();
+        this.closeStockModal();
+      },
+      error: (err) => {
+        console.error('Error adding stock:', err);
+        alert(err.error?.error || 'Failed to add stock');
+      }
+    });
+  }
+
+  openStockHistoryModal(product: Product): void {
+    if (!product.id) return;
+    
+    this.stockProduct = { ...product };
+    this.showStockHistoryModal = true;
+    
+    this.apiService.getStockHistory(product.id, 20).subscribe({
+      next: (history) => {
+        this.stockHistory = history;
+      },
+      error: (err) => console.error('Error loading stock history:', err)
+    });
+
+    this.apiService.getStockSummary(product.id).subscribe({
+      next: (summary) => {
+        this.stockSummary = summary;
+      },
+      error: (err) => console.error('Error loading stock summary:', err)
+    });
+  }
+
+  closeStockHistoryModal(): void {
+    this.showStockHistoryModal = false;
+    this.stockProduct = null;
+    this.stockHistory = [];
+    this.stockSummary = null;
   }
 
   deleteCategory(categoryName: string): void {
