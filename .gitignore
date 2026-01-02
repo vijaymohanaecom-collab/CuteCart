@@ -49,3 +49,6 @@ coverage/
 
 # Build artifacts
 *.tsbuildinfo
+
+# Sensitive scripts
+backend/src/scripts/get-google-token.js

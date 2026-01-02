@@ -23,7 +23,12 @@ export class LoginComponent {
     private router: Router
   ) {
     if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/dashboard']);
+      const user = this.authService.getCurrentUser();
+      if (user?.role === 'sales') {
+        this.router.navigate(['/billing']);
+      } else {
+        this.router.navigate(['/dashboard']);
+      }
     }
   }
 
@@ -42,7 +47,12 @@ export class LoginComponent {
     this.authService.login(this.username, this.password).subscribe({
       next: (response) => {
         console.log('Login successful:', response);
-        this.router.navigate(['/dashboard']);
+        const user = this.authService.getCurrentUser();
+        if (user?.role === 'sales') {
+          this.router.navigate(['/billing']);
+        } else {
+          this.router.navigate(['/dashboard']);
+        }
       },
       error: (err) => {
         console.error('Login error:', err);

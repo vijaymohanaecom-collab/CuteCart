@@ -129,6 +129,7 @@ export class BillingComponent implements OnInit, OnDestroy {
   // Customer auto-complete
   customers: {customer_name: string, customer_phone: string}[] = [];
   filteredCustomers: {customer_name: string, customer_phone: string}[] = [];
+  activeInput: 'name' | 'phone' | null = null;
   
   settings: Settings | null = null;
   subtotal = 0;
@@ -224,6 +225,7 @@ export class BillingComponent implements OnInit, OnDestroy {
   }
 
   onCustomerNameChange(): void {
+    this.activeInput = 'name';
     if (!this.customerName) {
       this.filteredCustomers = [];
       return;
@@ -236,6 +238,7 @@ export class BillingComponent implements OnInit, OnDestroy {
   }
 
   onCustomerPhoneChange(): void {
+    this.activeInput = 'phone';
     if (!this.customerPhone) {
       this.filteredCustomers = [];
       return;
@@ -251,6 +254,20 @@ export class BillingComponent implements OnInit, OnDestroy {
     this.customerName = customer.customer_name;
     this.customerPhone = customer.customer_phone || '';
     this.filteredCustomers = [];
+  }
+
+  onCustomerKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.filteredCustomers = [];
+      this.activeInput = null;
+    }
+  }
+
+  onInputBlur(): void {
+    // Small delay to allow click events to fire before hiding
+    setTimeout(() => {
+      this.activeInput = null;
+    }, 200);
   }
 
   searchProducts(): void {

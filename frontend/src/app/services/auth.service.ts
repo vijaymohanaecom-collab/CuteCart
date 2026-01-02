@@ -24,15 +24,35 @@ export class AuthService {
     private router: Router
   ) {
     this.checkStorageAvailability();
+    this.initializeAuth();
+  }
+
+  private async initializeAuth() {
     try {
+      const token = this.safeStorageGet('token');
+      if (!token) {
+        this.logout();
+        return;
+      }
+
+      // Validate token with server
+      const isValid = await this.http.get(`${this.apiUrl}/auth/validate-token`, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      }).toPromise().then(() => true).catch(() => false);
+
+      if (!isValid) {
+        this.logout();
+        return;
+      }
+
       const user = this.getCurrentUser();
       if (user) {
         this.currentUserSubject.next(user);
         this.resetInactivityTimer();
       }
     } catch (e) {
-      console.warn('AuthService: Could not restore user session:', e);
-      // User will need to login - this is fine
+      console.warn('AuthService: Could not initialize auth:', e);
+      this.logout();
     }
   }
 

@@ -1,26 +1,24 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse, HttpHandlerFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
-export const authInterceptor: HttpInterceptorFn = (req, next) => {
+export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
   const router = inject(Router);
+  const authService = inject(AuthService);
+  
   let token: string | null = null;
-
-  // Try to get token from localStorage
-  try {
-    token = localStorage.getItem('token');
-  } catch (e) {
-    console.warn('Auth interceptor: Cannot access localStorage:', e);
+  
+  // Skip token check for login and public routes
+  if (req.url.includes('/auth/')) {
+    return next(req);
   }
 
-  // Fallback to sessionStorage
-  if (!token) {
-    try {
-      token = sessionStorage.getItem('token');
-    } catch (e) {
-      console.warn('Auth interceptor: Cannot access sessionStorage:', e);
-    }
+  try {
+    token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  } catch (e) {
+    console.warn('Auth interceptor: Cannot access storage:', e);
   }
 
   // Clone request with token if available
@@ -30,8 +28,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         Authorization: `Bearer ${token}`
       }
     });
-  } else if (!req.url.includes('/auth/login')) {
-    console.warn('Auth interceptor: No token available for request to:', req.url);
   }
 
   // Handle errors
@@ -39,13 +35,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401 || error.status === 403) {
         console.error('Authentication error:', error.error);
+        authService.logout();
         
-        // Clear invalid token
-        try {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-        } catch (e) {
-          console.warn('Cannot clear localStorage:', e);
+        // Store the current URL for redirect after login
+        const currentUrl = router.url;
+        if (currentUrl !== '/login') {
+          router.navigate(['/login'], { 
+            queryParams: { returnUrl: currentUrl } 
+          });
         }
         
         try {

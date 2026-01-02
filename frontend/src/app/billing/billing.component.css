@@ -374,19 +374,36 @@
   position: relative;
 }
 
+/* Autocomplete dropdown base styles */
 .autocomplete-dropdown {
   position: absolute;
-  top: 100%;
   left: 0;
   right: 0;
-  background: white;
-  border: 1px solid #ddd;
-  border-top: none;
-  border-radius: 0 0 4px 4px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  max-height: 200px;
+  max-height: 250px;
   overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
   z-index: 1000;
+  display: block;
+}
+
+/* Name field dropdown (show below) */
+.name-dropdown {
+  top: 100%;
+  bottom: auto;
+  margin-top: 2px;
+  margin-bottom: 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Phone field dropdown (show below) */
+.phone-dropdown {
+  top: 100%;
+  bottom: auto;
+  margin-top: 2px;
+  margin-bottom: 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .autocomplete-item {

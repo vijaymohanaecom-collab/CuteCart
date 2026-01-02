@@ -119,9 +119,12 @@
             placeholder="Customer Name (Optional)" 
             [(ngModel)]="customerName"
             (ngModelChange)="onCustomerNameChange()"
+            (keydown)="onCustomerKeyDown($event)"
+            (focus)="activeInput = 'name'"
+            (blur)="onInputBlur()"
             autocomplete="off"
           />
-          <div class="autocomplete-dropdown" *ngIf="filteredCustomers.length > 0">
+          <div class="autocomplete-dropdown name-dropdown" *ngIf="filteredCustomers.length > 0 && activeInput === 'name'">
             <div 
               class="autocomplete-item" 
               *ngFor="let customer of filteredCustomers"
@@ -138,9 +141,12 @@
             placeholder="Phone (Optional)" 
             [(ngModel)]="customerPhone"
             (ngModelChange)="onCustomerPhoneChange()"
+            (keydown)="onCustomerKeyDown($event)"
+            (focus)="activeInput = 'phone'"
+            (blur)="onInputBlur()"
             autocomplete="off"
           />
-          <div class="autocomplete-dropdown" *ngIf="filteredCustomers.length > 0 && customerPhone">
+          <div class="autocomplete-dropdown phone-dropdown" *ngIf="filteredCustomers.length > 0 && activeInput === 'phone'">
             <div 
               class="autocomplete-item" 
               *ngFor="let customer of filteredCustomers"
