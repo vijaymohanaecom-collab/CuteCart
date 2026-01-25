@@ -24,6 +24,9 @@ export class InvoicesComponent implements OnInit {
   showEditModal = false;
   editInvoice: Invoice | null = null;
 
+  // Search and filter properties
+  searchTerm: string = '';
+  
   // Date filter properties
   dateFilter: 'today' | 'yesterday' | 'this_week' | 'last_week' | 'this_month' | 'last_month' | 'custom' | 'all' = 'today';
   customStartDate: string = '';
@@ -102,11 +105,11 @@ export class InvoicesComponent implements OnInit {
   }
 
   applyDateFilter(): void {
-    const now = new Date();
     let filtered = [...this.invoices];
 
-    // Sales person only sees today's invoices
+    // Apply date filter
     if (this.isSalesPerson) {
+      // Sales person only sees today's invoices
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const endOfDay = new Date();
@@ -116,36 +119,63 @@ export class InvoicesComponent implements OnInit {
         const invoiceDate = new Date(invoice.created_at!);
         return invoiceDate >= today && invoiceDate <= endOfDay;
       });
-      
-      this.filteredInvoices = filtered;
-      this.calculateStatistics();
-      return;
-    }
+    } else if (this.dateFilter !== 'all') {
+      if (this.dateFilter === 'custom') {
+        if (this.customStartDate && this.customEndDate) {
+          const startDate = new Date(this.customStartDate);
+          startDate.setHours(0, 0, 0, 0);
+          const endDate = new Date(this.customEndDate);
+          endDate.setHours(23, 59, 59, 999);
 
-    if (this.dateFilter === 'all') {
-      this.filteredInvoices = filtered;
-    } else if (this.dateFilter === 'custom') {
-      if (this.customStartDate && this.customEndDate) {
-        const startDate = new Date(this.customStartDate);
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(this.customEndDate);
-        endDate.setHours(23, 59, 59, 999);
-
+          filtered = filtered.filter(invoice => {
+            const invoiceDate = new Date(invoice.created_at!);
+            return invoiceDate >= startDate && invoiceDate <= endDate;
+          });
+        }
+      } else {
+        const { startDate, endDate } = this.getDateRange(this.dateFilter);
         filtered = filtered.filter(invoice => {
           const invoiceDate = new Date(invoice.created_at!);
           return invoiceDate >= startDate && invoiceDate <= endDate;
         });
       }
-      this.filteredInvoices = filtered;
-    } else {
-      const { startDate, endDate } = this.getDateRange(this.dateFilter);
-      filtered = filtered.filter(invoice => {
-        const invoiceDate = new Date(invoice.created_at!);
-        return invoiceDate >= startDate && invoiceDate <= endDate;
-      });
-      this.filteredInvoices = filtered;
     }
 
+    // Apply search filter
+    this.filteredInvoices = this.applySearchFilter(filtered);
+    this.calculateStatistics();
+  }
+
+  // Apply search filter to the invoices
+  applySearchFilter(invoices: Invoice[]): Invoice[] {
+    if (!this.searchTerm) {
+      return invoices;
+    }
+
+    const searchTerm = this.searchTerm.toLowerCase();
+    return invoices.filter(invoice => {
+      // Search in invoice number
+      if (invoice.invoice_number?.toLowerCase().includes(searchTerm)) {
+        return true;
+      }
+      
+      // Search in customer name
+      if (invoice.customer_name?.toLowerCase().includes(searchTerm)) {
+        return true;
+      }
+      
+      // Search in customer phone
+      if (invoice.customer_phone?.includes(searchTerm)) {
+        return true;
+      }
+      
+      return false;
+    });
+  }
+
+  // Handle search input changes
+  applySearch(): void {
+    this.filteredInvoices = this.applySearchFilter([...this.invoices]);
     this.calculateStatistics();
   }
 

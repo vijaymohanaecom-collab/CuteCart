@@ -64,6 +64,15 @@
   <div class="card">
     <div class="card-header">
       <h2 class="card-title">Sales / Invoices</h2>
+      <div class="search-container">
+        <input 
+          type="text" 
+          class="search-input" 
+          placeholder="Search by invoice #, customer name, or phone..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applySearch()"
+        />
+      </div>
     </div>
 
     <!-- Date Filter Section -->
