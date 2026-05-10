@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
-import { Staff, Attendance, AttendanceWithStaff, STAFF_POSITIONS, ATTENDANCE_STATUS } from '../models/staff.model';
+import { Staff, Attendance, AttendanceWithStaff, STAFF_POSITIONS, ATTENDANCE_STATUS, AdvanceSalary, SalaryCalculation, SalarySummary } from '../models/staff.model';
 
 @Component({
   selector: 'app-staff',
@@ -63,6 +63,43 @@ export class StaffComponent implements OnInit {
   editAttendance: AttendanceWithStaff | null = null;
   bulkAttendanceDate: string = '';
   bulkAttendanceRecords: { staff: Staff; check_in: string; status: string }[] = [];
+
+  // Salary calculation modals
+  showSalaryCalculationModal = false;
+  showAdvanceSalaryModal = false;
+  salaryValidationMessage: string = '';
+  
+  // Salary calculation form
+  salaryCalculationForm = {
+    monthlySalary: 0
+  };
+  
+  // Advance salary form
+  advanceSalaryForm = {
+    amount: 0,
+    date: '',
+    notes: ''
+  };
+  
+  // Salary calculation result
+  salaryCalculationResult: SalaryCalculation | null = null;
+  salarySummary = {
+    totalDays: 0,
+    presentDays: 0,
+    halfDays: 0,
+    absentDays: 0,
+    leaveDays: 0,
+    weekOffDays: 0,
+    holidayDays: 0,
+    payableDays: 0,
+    dailySalary: 0,
+    grossSalary: 0,
+    totalAdvance: 0,
+    netSalary: 0
+  };
+  
+  // Advance salary records
+  advanceSalaryRecords: AdvanceSalary[] = [];
 
   // Filters
   staffStatusFilter: 'all' | 'active' | 'inactive' = 'active';
@@ -588,5 +625,265 @@ export class StaffComponent implements OnInit {
     const months = ['January', 'February', 'March', 'April', 'May', 'June',
                    'July', 'August', 'September', 'October', 'November', 'December'];
     return `${months[this.currentMonth.getMonth()]} ${this.currentMonth.getFullYear()}`;
+  }
+
+  // Salary Calculation Methods
+  getSelectedStaff(): Staff | null {
+    return this.staffList.find(staff => staff.id === this.selectedStaffForCalendar) || null;
+  }
+
+  openSalaryCalculationModal(): void {
+    if (!this.selectedStaffForCalendar) return;
+    
+    this.salaryValidationMessage = '';
+    this.salaryCalculationForm.monthlySalary = 0;
+    this.salaryCalculationResult = null;
+    this.resetSalarySummary();
+    this.loadAdvanceSalaryRecords();
+    this.validateAttendanceForMonth();
+    this.showSalaryCalculationModal = true;
+  }
+
+  closeSalaryCalculationModal(): void {
+    this.showSalaryCalculationModal = false;
+    this.salaryValidationMessage = '';
+    this.salaryCalculationResult = null;
+    this.resetSalarySummary();
+  }
+
+  openAdvanceSalaryModal(): void {
+    if (!this.selectedStaffForCalendar) return;
+    
+    this.advanceSalaryForm = {
+      amount: 0,
+      date: this.formatDateForInput(new Date()),
+      notes: ''
+    };
+    this.showAdvanceSalaryModal = true;
+  }
+
+  closeAdvanceSalaryModal(): void {
+    this.showAdvanceSalaryModal = false;
+    this.advanceSalaryForm = {
+      amount: 0,
+      date: '',
+      notes: ''
+    };
+  }
+
+  validateAttendanceForMonth(): void {
+    if (!this.selectedStaffForCalendar) return;
+    
+    const year = this.currentMonth.getFullYear();
+    const month = this.currentMonth.getMonth();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    
+    let missingDays = 0;
+    for (let day = 1; day <= totalDays; day++) {
+      const date = new Date(year, month, day);
+      const dateStr = this.formatDateForInput(date);
+      
+      if (!this.attendanceMap.has(dateStr)) {
+        missingDays++;
+      }
+    }
+    
+    if (missingDays > 0) {
+      this.salaryValidationMessage = 
+        `Attendance not marked for ${missingDays} day(s) in this month. Please mark attendance for all days before calculating salary.`;
+    } else {
+      this.salaryValidationMessage = '';
+    }
+  }
+
+  calculateSalary(): void {
+    if (!this.selectedStaffForCalendar || this.salaryCalculationForm.monthlySalary <= 0) return;
+    
+    const year = this.currentMonth.getFullYear();
+    const month = this.currentMonth.getMonth();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    
+    // Count attendance types
+    let presentDays = 0;
+    let halfDays = 0;
+    let absentDays = 0;
+    let leaveDays = 0;
+    let weekOffDays = 0;
+    let holidayDays = 0;
+    
+    for (let day = 1; day <= totalDays; day++) {
+      const date = new Date(year, month, day);
+      const dateStr = this.formatDateForInput(date);
+      const attendance = this.attendanceMap.get(dateStr);
+      
+      if (attendance) {
+        switch (attendance.status) {
+          case 'present':
+            presentDays++;
+            break;
+          case 'half_day':
+            halfDays++;
+            break;
+          case 'absent':
+            absentDays++;
+            break;
+          case 'leave':
+            leaveDays++;
+            break;
+          case 'week_off':
+            weekOffDays++;
+            break;
+          case 'holiday':
+            holidayDays++;
+            break;
+        }
+      }
+    }
+    
+    // Calculate daily salary
+    const dailySalary = this.salaryCalculationForm.monthlySalary / totalDays;
+    
+    // Calculate payable days (present + half day + week off + holiday)
+    const payableDays = presentDays + (halfDays * 0.5) + weekOffDays + holidayDays;
+    
+    // Calculate gross salary
+    const grossSalary = payableDays * dailySalary;
+    
+    // Calculate total advance for the month
+    const totalAdvance = this.calculateTotalAdvanceForMonth();
+    
+    // Calculate net salary
+    const netSalary = grossSalary - totalAdvance;
+    
+    // Update summary
+    this.salarySummary = {
+      totalDays,
+      presentDays,
+      halfDays,
+      absentDays,
+      leaveDays,
+      weekOffDays,
+      holidayDays,
+      payableDays,
+      dailySalary,
+      grossSalary,
+      totalAdvance,
+      netSalary
+    };
+    
+    // Store calculation result
+    this.salaryCalculationResult = {
+      staff_id: this.selectedStaffForCalendar,
+      month: this.getMonthYearDisplay(),
+      year,
+      monthly_salary: this.salaryCalculationForm.monthlySalary,
+      daily_salary: dailySalary,
+      total_days: totalDays,
+      present_days: presentDays,
+      half_days: halfDays,
+      absent_days: absentDays,
+      leave_days: leaveDays,
+      week_off_days: weekOffDays,
+      holiday_days: holidayDays,
+      payable_days: payableDays,
+      gross_salary: grossSalary,
+      total_advance: totalAdvance,
+      net_salary: netSalary,
+      created_at: new Date().toISOString()
+    };
+  }
+
+  calculateTotalAdvanceForMonth(): number {
+    if (!this.selectedStaffForCalendar) return 0;
+    
+    const year = this.currentMonth.getFullYear();
+    const month = this.currentMonth.getMonth();
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0);
+    
+    return this.advanceSalaryRecords
+      .filter(advance => {
+        const advanceDate = new Date(advance.date);
+        return advanceDate >= startDate && advanceDate <= endDate;
+      })
+      .reduce((total, advance) => total + advance.amount, 0);
+  }
+
+  loadAdvanceSalaryRecords(): void {
+    if (!this.selectedStaffForCalendar) return;
+    
+    this.apiService.getAdvanceSalaries(this.selectedStaffForCalendar).subscribe({
+      next: (records) => {
+        this.advanceSalaryRecords = records;
+      },
+      error: (err) => console.error('Error loading advance salary records:', err)
+    });
+  }
+
+  resetSalarySummary(): void {
+    this.salarySummary = {
+      totalDays: 0,
+      presentDays: 0,
+      halfDays: 0,
+      absentDays: 0,
+      leaveDays: 0,
+      weekOffDays: 0,
+      holidayDays: 0,
+      payableDays: 0,
+      dailySalary: 0,
+      grossSalary: 0,
+      totalAdvance: 0,
+      netSalary: 0
+    };
+  }
+
+  isSalaryCalculationValid(): boolean {
+    return this.selectedStaffForCalendar !== null && 
+           this.salaryCalculationForm.monthlySalary > 0 && 
+           this.salaryValidationMessage === '';
+  }
+
+  isAdvanceSalaryFormValid(): boolean {
+    return this.selectedStaffForCalendar !== null && 
+           this.advanceSalaryForm.amount > 0 && 
+           this.advanceSalaryForm.date !== '';
+  }
+
+  saveSalaryCalculation(): void {
+    if (!this.salaryCalculationResult || !this.isSalaryCalculationValid()) return;
+    
+    this.apiService.saveSalaryCalculation(this.salaryCalculationResult).subscribe({
+      next: () => {
+        alert('Salary calculation saved successfully!');
+        this.closeSalaryCalculationModal();
+      },
+      error: (err) => {
+        console.error('Error saving salary calculation:', err);
+        alert('Error saving salary calculation. Please try again.');
+      }
+    });
+  }
+
+  saveAdvanceSalary(): void {
+    if (!this.isAdvanceSalaryFormValid()) return;
+    
+    const advanceSalary: AdvanceSalary = {
+      staff_id: this.selectedStaffForCalendar!,
+      amount: this.advanceSalaryForm.amount,
+      date: this.advanceSalaryForm.date,
+      notes: this.advanceSalaryForm.notes
+    };
+    
+    this.apiService.saveAdvanceSalary(advanceSalary).subscribe({
+      next: () => {
+        alert('Advance salary recorded successfully!');
+        this.closeAdvanceSalaryModal();
+        this.loadAdvanceSalaryRecords(); // Reload advance records
+      },
+      error: (err) => {
+        console.error('Error saving advance salary:', err);
+        alert('Error saving advance salary. Please try again.');
+      }
+    });
   }
 }

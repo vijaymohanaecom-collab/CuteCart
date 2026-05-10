@@ -50,3 +50,39 @@ export const ATTENDANCE_STATUS = [
   { value: 'week_off', label: 'Week Off', color: '#6c757d', icon: 'W' },
   { value: 'holiday', label: 'Holiday', color: '#e83e8c', icon: 'H' }
 ];
+
+export interface AdvanceSalary {
+  id?: number;
+  staff_id: number;
+  amount: number;
+  date: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SalaryCalculation {
+  staff_id: number;
+  month: string;
+  year: number;
+  monthly_salary: number;
+  daily_salary: number;
+  total_days: number;
+  present_days: number;
+  half_days: number;
+  absent_days: number;
+  leave_days: number;
+  week_off_days: number;
+  holiday_days: number;
+  payable_days: number;
+  gross_salary: number;
+  total_advance: number;
+  net_salary: number;
+  created_at?: string;
+}
+
+export interface SalarySummary {
+  staff: Staff;
+  calculation: SalaryCalculation;
+  advances: AdvanceSalary[];
+}

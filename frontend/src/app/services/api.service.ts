@@ -165,7 +165,7 @@ export class ApiService {
     return this.http.get<any[]>(`${this.apiUrl}/invoices/stats/categories`);
   }
 
-  getCustomersList(): Observable<{customer_name: string, customer_phone: string}[]> {
+  getInvoiceCustomersList(): Observable<{customer_name: string, customer_phone: string}[]> {
     return this.http.get<{customer_name: string, customer_phone: string}[]>(`${this.apiUrl}/invoices/customers/list`);
   }
 
@@ -308,6 +308,54 @@ export class ApiService {
     return this.http.get(url);
   }
 
+  // Salary Management
+  getAdvanceSalaries(staffId?: number): Observable<any[]> {
+    let url = `${this.apiUrl}/salary/advance`;
+    if (staffId) {
+      url += `?staff_id=${staffId}`;
+    }
+    return this.http.get<any[]>(url);
+  }
+
+  saveAdvanceSalary(advance: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/salary/advance`, advance);
+  }
+
+  updateAdvanceSalary(id: number, advance: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/salary/advance/${id}`, advance);
+  }
+
+  deleteAdvanceSalary(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/salary/advance/${id}`);
+  }
+
+  getSalaryCalculations(staffId?: number, month?: string, year?: number): Observable<any[]> {
+    let url = `${this.apiUrl}/salary/calculations`;
+    const params: string[] = [];
+    
+    if (staffId) params.push(`staff_id=${staffId}`);
+    if (month) params.push(`month=${month}`);
+    if (year) params.push(`year=${year}`);
+    
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
+    }
+    
+    return this.http.get<any[]>(url);
+  }
+
+  saveSalaryCalculation(calculation: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/salary/calculations`, calculation);
+  }
+
+  updateSalaryCalculation(id: number, calculation: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/salary/calculations/${id}`, calculation);
+  }
+
+  deleteSalaryCalculation(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/salary/calculations/${id}`);
+  }
+
   // Backup
   getBackupStatus(): Observable<any> {
     return this.http.get(`${this.apiUrl}/backup/status`);
@@ -427,5 +475,51 @@ export class ApiService {
 
   deleteNotification(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/notifications/${id}`);
+  }
+
+  // Customers
+  getCustomersList(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/customers`);
+  }
+
+  getCustomerByPhone(phone: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/customers/phone/${phone}`);
+  }
+
+  getCustomer(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/customers/${id}`);
+  }
+
+  createCustomer(customer: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/customers`, customer);
+  }
+
+  updateCustomer(id: number, customer: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/customers/${id}`, customer);
+  }
+
+  deleteCustomer(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/customers/${id}`);
+  }
+
+  // Loyalty Points
+  getCustomerLoyaltyPoints(customerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/customers/${customerId}/loyalty-points`);
+  }
+
+  addLoyaltyPoints(transaction: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/loyalty-points`, transaction);
+  }
+
+  getLoyaltyTransactions(customerId?: number): Observable<any[]> {
+    let url = `${this.apiUrl}/loyalty-points/transactions`;
+    if (customerId) {
+      url += `?customer_id=${customerId}`;
+    }
+    return this.http.get<any[]>(url);
+  }
+
+  updateLoyaltyPoints(customerId: number, points: number): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/customers/${customerId}/loyalty-points`, { points });
   }
 }

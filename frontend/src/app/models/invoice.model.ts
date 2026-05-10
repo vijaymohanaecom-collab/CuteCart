@@ -14,11 +14,14 @@ export interface Invoice {
   invoice_number: string;
   customer_name?: string;
   customer_phone?: string;
+  customer_id?: number;
   items: InvoiceItem[];
   subtotal: number;
   tax_rate: number;
   tax_amount: number;
   discount?: number;
+  loyalty_points_used?: number;
+  loyalty_points_earned?: number;
   total: number;
   payment_method?: string;
   cash_amount?: number;

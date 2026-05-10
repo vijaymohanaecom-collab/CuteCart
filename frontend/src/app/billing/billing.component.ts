@@ -9,6 +9,7 @@ import { Product } from '../models/product.model';
 import { Invoice, InvoiceItem } from '../models/invoice.model';
 import { Settings } from '../models/settings.model';
 import { CartTab, CartTabState } from '../models/cart-tab.model';
+import { Customer, LoyaltyTransaction } from '../models/customer.model';
 import { timeout } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 
@@ -131,6 +132,13 @@ export class BillingComponent implements OnInit, OnDestroy {
   filteredCustomers: {customer_name: string, customer_phone: string}[] = [];
   activeInput: 'name' | 'phone' | null = null;
   
+  // Loyalty Points
+  selectedCustomer: Customer | null = null;
+  availableLoyaltyPoints: number = 0;
+  loyaltyPointsToUse: number = 0;
+  maxLoyaltyPointsToUse: number = 0;
+  showLoyaltyPointsSection: boolean = false;
+  
   settings: Settings | null = null;
   subtotal = 0;
   taxRate = 0;
@@ -216,11 +224,11 @@ export class BillingComponent implements OnInit, OnDestroy {
   }
 
   loadCustomers(): void {
-    this.apiService.getCustomersList().subscribe({
+    this.apiService.getInvoiceCustomersList().subscribe({
       next: (customers) => {
         this.customers = customers;
       },
-      error: (err) => console.error('Error loading customers:', err)
+      error: (err: any) => console.error('Error loading customers:', err)
     });
   }
 
@@ -320,7 +328,16 @@ export class BillingComponent implements OnInit, OnDestroy {
       ? (this.subtotal * this.discountPercentage) / 100
       : this.discount;
     
-    this.total = this.subtotal + this.taxAmount - currentDiscount;
+    // Calculate total before loyalty points
+    const totalBeforeLoyalty = this.subtotal + this.taxAmount - currentDiscount;
+    
+    // Apply loyalty points deduction
+    const loyaltyPointsDeduction = this.loyaltyPointsToUse || 0;
+    
+    this.total = totalBeforeLoyalty - loyaltyPointsDeduction;
+    
+    // Update max loyalty points that can be used
+    this.calculateMaxLoyaltyPointsToUse();
   }
 
   clearCart(): void {
@@ -353,15 +370,20 @@ export class BillingComponent implements OnInit, OnDestroy {
       ? (this.subtotal * this.discountPercentage) / 100
       : this.discount;
     
+    const loyaltyPointsEarned = this.calculateLoyaltyPointsEarned();
+    
     const invoice: Invoice = {
       invoice_number: this.invoiceNumber,
       customer_name: this.customerName || 'Walk-in Customer',
       customer_phone: this.customerPhone,
+      customer_id: this.selectedCustomer?.id,
       items: this.cart,
       subtotal: this.subtotal,
       tax_rate: this.taxRate,
       tax_amount: this.taxAmount,
       discount: actualDiscount,
+      loyalty_points_used: this.loyaltyPointsToUse || 0,
+      loyalty_points_earned: loyaltyPointsEarned,
       total: this.total,
       payment_method: this.isPartialPayment ? 'split' : this.paymentMethod,
       cash_amount: this.isPartialPayment ? this.cashAmount : (this.paymentMethod === 'cash' ? this.total : 0),
@@ -374,6 +396,9 @@ export class BillingComponent implements OnInit, OnDestroy {
       timeout(30000)
     ).subscribe({
       next: () => {
+        // Save loyalty points transactions
+        this.saveLoyaltyTransactions(loyaltyPointsEarned);
+        
         setTimeout(() => {
           this.isSaving = false;
           this.showInvoicePreview = false;
@@ -391,7 +416,7 @@ export class BillingComponent implements OnInit, OnDestroy {
         if (err.name === 'TimeoutError') {
           alert('Request timed out. Please check if the backend server is running.');
         } else if (err.status === 0) {
-          alert('Cannot connect to server. Please ensure the backend is running on http://localhost:3000');
+          alert('Cannot connect to server. Please ensure backend is running on http://localhost:3000');
         } else {
           alert(`Error saving invoice: ${err.error?.error || err.message || 'Unknown error'}`);
         }
@@ -501,6 +526,131 @@ export class BillingComponent implements OnInit, OnDestroy {
   }
 
   onDiscountPercentageChange(): void {
+    this.calculateTotals();
+  }
+
+  // Loyalty Points Methods
+  onLoyaltyPointsChange(): void {
+    // Ensure loyalty points don't exceed maximum allowed
+    if (this.loyaltyPointsToUse > this.maxLoyaltyPointsToUse) {
+      this.loyaltyPointsToUse = this.maxLoyaltyPointsToUse;
+    }
+    this.calculateTotals();
+  }
+
+  toggleLoyaltyPointsSection(): void {
+    this.showLoyaltyPointsSection = !this.showLoyaltyPointsSection;
+    if (this.showLoyaltyPointsSection && this.selectedCustomer) {
+      this.loadCustomerLoyaltyPoints();
+    }
+  }
+
+  loadCustomerLoyaltyPoints(): void {
+    if (!this.selectedCustomer?.id) return;
+    
+    this.apiService.getCustomerLoyaltyPoints(this.selectedCustomer.id).subscribe({
+      next: (data: any) => {
+        this.availableLoyaltyPoints = data.available_points;
+        this.calculateMaxLoyaltyPointsToUse();
+      },
+      error: (err: any) => console.error('Error loading loyalty points:', err)
+    });
+  }
+
+  calculateMaxLoyaltyPointsToUse(): void {
+    // Maximum 10% of subtotal can be deducted from loyalty points
+    this.maxLoyaltyPointsToUse = Math.min(
+      this.availableLoyaltyPoints,
+      Math.floor(this.subtotal * 0.10)
+    );
+    
+    // Reset loyalty points to use if it exceeds new maximum
+    if (this.loyaltyPointsToUse > this.maxLoyaltyPointsToUse) {
+      this.loyaltyPointsToUse = this.maxLoyaltyPointsToUse;
+    }
+  }
+
+  calculateLoyaltyPointsEarned(): number {
+    // 5% of subtotal will be added as loyalty points
+    return Math.floor(this.subtotal * 0.05);
+  }
+
+  onCustomerSelect(customer: {customer_name: string, customer_phone: string}): void {
+    this.customerName = customer.customer_name;
+    this.customerPhone = customer.customer_phone || '';
+    this.filteredCustomers = [];
+    
+    // Find full customer details with loyalty points
+    this.loadCustomerDetails(customer.customer_phone);
+  }
+
+  loadCustomerDetails(phone: string): void {
+    if (!phone) return;
+    
+    this.apiService.getCustomerByPhone(phone).subscribe({
+      next: (customer: any) => {
+        this.selectedCustomer = customer;
+        this.availableLoyaltyPoints = customer.loyalty_points;
+        this.showLoyaltyPointsSection = true;
+        this.calculateMaxLoyaltyPointsToUse();
+      },
+      error: (err: any) => {
+        // Customer not found, create new customer logic
+        this.selectedCustomer = {
+          name: this.customerName,
+          phone: phone,
+          loyalty_points: 0,
+          total_spent: 0
+        };
+        this.availableLoyaltyPoints = 0;
+        this.showLoyaltyPointsSection = false;
+      }
+    });
+  }
+
+  saveLoyaltyTransactions(loyaltyPointsEarned: number): void {
+    if (!this.selectedCustomer?.id) return;
+    
+    // Save loyalty points earned transaction
+    if (loyaltyPointsEarned > 0) {
+      const earnedTransaction: LoyaltyTransaction = {
+        customer_id: this.selectedCustomer.id,
+        invoice_id: undefined, // Will be updated after invoice is saved
+        type: 'earned',
+        points: loyaltyPointsEarned,
+        description: `Earned from invoice ${this.invoiceNumber}`,
+        created_at: new Date().toISOString()
+      };
+      
+      this.apiService.addLoyaltyPoints(earnedTransaction).subscribe({
+        next: () => {
+          console.log('Loyalty points earned transaction saved');
+        },
+        error: (err: any) => console.error('Error saving loyalty points earned transaction:', err)
+      });
+    }
+    
+    // Save loyalty points redeemed transaction
+    if (this.loyaltyPointsToUse > 0) {
+      const redeemedTransaction: LoyaltyTransaction = {
+        customer_id: this.selectedCustomer.id,
+        invoice_id: undefined, // Will be updated after invoice is saved
+        type: 'redeemed',
+        points: this.loyaltyPointsToUse,
+        description: `Redeemed on invoice ${this.invoiceNumber}`,
+        created_at: new Date().toISOString()
+      };
+      
+      this.apiService.addLoyaltyPoints(redeemedTransaction).subscribe({
+        next: () => {
+          console.log('Loyalty points redeemed transaction saved');
+        },
+        error: (err: any) => console.error('Error saving loyalty points redeemed transaction:', err)
+      });
+    }
+  }
+
+  updateCalculateTotals(): void {
     this.calculateTotals();
   }
 }

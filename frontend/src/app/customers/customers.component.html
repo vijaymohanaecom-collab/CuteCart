@@ -60,6 +60,15 @@
         <div class="stat-sublabel">{{ formatCurrency(statistics.topCustomer.total_spent) }}</div>
       </div>
     </div>
+
+    <div class="stat-card stat-info" *ngIf="statistics.totalLoyaltyPoints !== undefined">
+      <div class="stat-icon">💎</div>
+      <div class="stat-content">
+        <div class="stat-label">Total Loyalty Points</div>
+        <div class="stat-value">{{ statistics.totalLoyaltyPoints | number }}</div>
+        <div class="stat-sublabel">Across all customers</div>
+      </div>
+    </div>
   </div>
 
   <!-- Filters Section -->
@@ -137,6 +146,7 @@
           <th>Status</th>
           <th>Total Purchases</th>
           <th>Total Spent</th>
+          <th>Loyalty Points</th>
           <th>Avg Purchase</th>
           <th>First Purchase</th>
           <th>Last Purchase</th>
@@ -158,6 +168,12 @@
           </td>
           <td class="text-center">{{ customer.total_purchases }}</td>
           <td class="text-right">{{ formatCurrency(customer.total_spent) }}</td>
+          <td class="text-center">
+            <span class="loyalty-points-badge" *ngIf="customer.loyalty_points && customer.loyalty_points > 0">
+              💎 {{ customer.loyalty_points }}
+            </span>
+            <span *ngIf="!customer.loyalty_points">-</span>
+          </td>
           <td class="text-right">{{ formatCurrency(customer.avg_purchase_value) }}</td>
           <td>{{ formatDate(customer.first_purchase_date) }}</td>
           <td>{{ formatDate(customer.last_purchase_date) }}</td>

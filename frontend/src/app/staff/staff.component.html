@@ -159,6 +159,12 @@
             <button class="btn btn-sm btn-secondary" (click)="previousMonth()">◀ Previous</button>
             <h3 class="month-display">{{ getMonthYearDisplay() }}</h3>
             <button class="btn btn-sm btn-secondary" (click)="nextMonth()">Next ▶</button>
+            <button class="btn btn-sm btn-success" (click)="openSalaryCalculationModal()" *ngIf="isManager">
+              💰 Calculate Salary
+            </button>
+            <button class="btn btn-sm btn-warning" (click)="openAdvanceSalaryModal()" *ngIf="isManager">
+              💸 Add Advance
+            </button>
           </div>
         </div>
 
@@ -567,6 +573,191 @@
     <div class="modal-footer">
       <button (click)="bulkMarkAttendance()" class="btn btn-primary">Mark All Attendance</button>
       <button (click)="closeBulkAttendanceModal()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Salary Calculation Modal -->
+<div *ngIf="showSalaryCalculationModal" class="modal-overlay" (keydown.escape)="closeSalaryCalculationModal()" tabindex="-1">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h3 class="modal-title">💰 Calculate Salary</h3>
+      <button (click)="closeSalaryCalculationModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="salary-calculation-form">
+        <!-- Staff and Month Info -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Staff Member</label>
+            <input type="text" class="form-control" [value]="getSelectedStaff()?.name" readonly />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Month/Year</label>
+            <input type="text" class="form-control" [value]="getMonthYearDisplay()" readonly />
+          </div>
+        </div>
+
+        <!-- Monthly Salary Input -->
+        <div class="form-group">
+          <label class="form-label">Monthly Salary *</label>
+          <input 
+            type="number" 
+            class="form-control" 
+            [(ngModel)]="salaryCalculationForm.monthlySalary" 
+            min="0"
+            step="0.01"
+            placeholder="Enter monthly salary"
+          />
+        </div>
+
+        <!-- Attendance Validation -->
+        <div class="attendance-validation" *ngIf="salaryValidationMessage">
+          <div class="alert alert-warning">
+            ⚠️ {{ salaryValidationMessage }}
+          </div>
+        </div>
+
+        <!-- Attendance Summary -->
+        <div class="attendance-summary" *ngIf="salaryCalculationForm.monthlySalary > 0">
+          <h4>Attendance Summary</h4>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="label">Total Days:</span>
+              <span class="value">{{ salarySummary.totalDays }}</span>
+            </div>
+            <div class="summary-item present">
+              <span class="label">Present:</span>
+              <span class="value">{{ salarySummary.presentDays }}</span>
+            </div>
+            <div class="summary-item half-day">
+              <span class="label">Half Day:</span>
+              <span class="value">{{ salarySummary.halfDays }}</span>
+            </div>
+            <div class="summary-item absent">
+              <span class="label">Absent:</span>
+              <span class="value">{{ salarySummary.absentDays }}</span>
+            </div>
+            <div class="summary-item leave">
+              <span class="label">Leave:</span>
+              <span class="value">{{ salarySummary.leaveDays }}</span>
+            </div>
+            <div class="summary-item week-off">
+              <span class="label">Week Off:</span>
+              <span class="value">{{ salarySummary.weekOffDays }}</span>
+            </div>
+            <div class="summary-item holiday">
+              <span class="label">Holiday:</span>
+              <span class="value">{{ salarySummary.holidayDays }}</span>
+            </div>
+            <div class="summary-item payable">
+              <span class="label">Payable Days:</span>
+              <span class="value">{{ salarySummary.payableDays }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Salary Calculation Result -->
+        <div class="salary-result" *ngIf="salaryCalculationForm.monthlySalary > 0">
+          <h4>Salary Calculation</h4>
+          <div class="calculation-grid">
+            <div class="calculation-item">
+              <span class="label">Daily Salary:</span>
+              <span class="value">₹{{ salarySummary.dailySalary | number:'1.2-2' }}</span>
+            </div>
+            <div class="calculation-item">
+              <span class="label">Gross Salary:</span>
+              <span class="value">₹{{ salarySummary.grossSalary | number:'1.2-2' }}</span>
+            </div>
+            <div class="calculation-item">
+              <span class="label">Total Advance:</span>
+              <span class="value">₹{{ salarySummary.totalAdvance | number:'1.2-2' }}</span>
+            </div>
+            <div class="calculation-item net-salary">
+              <span class="label">Net Salary:</span>
+              <span class="value">₹{{ salarySummary.netSalary | number:'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button 
+        (click)="calculateSalary()" 
+        class="btn btn-primary" 
+        [disabled]="!isSalaryCalculationValid()"
+      >
+        Calculate Salary
+      </button>
+      <button 
+        (click)="saveSalaryCalculation()" 
+        class="btn btn-success" 
+        [disabled]="!salaryCalculationResult || !isSalaryCalculationValid()"
+      >
+        Save Calculation
+      </button>
+      <button (click)="closeSalaryCalculationModal()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Advance Salary Modal -->
+<div *ngIf="showAdvanceSalaryModal" class="modal-overlay" (keydown.escape)="closeAdvanceSalaryModal()" tabindex="-1">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">💸 Add Advance Salary</h3>
+      <button (click)="closeAdvanceSalaryModal()" class="modal-close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Staff Member</label>
+        <input type="text" class="form-control" [value]="getSelectedStaff()?.name" readonly />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Advance Amount *</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          [(ngModel)]="advanceSalaryForm.amount" 
+          min="0"
+          step="0.01"
+          placeholder="Enter advance amount"
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Date *</label>
+        <input 
+          type="date" 
+          class="form-control" 
+          [(ngModel)]="advanceSalaryForm.date"
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea 
+          class="form-control" 
+          [(ngModel)]="advanceSalaryForm.notes" 
+          rows="3"
+          placeholder="Enter notes (optional)"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button 
+        (click)="saveAdvanceSalary()" 
+        class="btn btn-primary" 
+        [disabled]="!isAdvanceSalaryFormValid()"
+      >
+        Save Advance
+      </button>
+      <button (click)="closeAdvanceSalaryModal()" class="btn btn-secondary">Cancel</button>
     </div>
   </div>
 </div>

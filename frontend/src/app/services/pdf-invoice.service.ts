@@ -212,14 +212,22 @@ export class PdfInvoiceService {
 
     // Create message - simplified for better compatibility
     const storeName = storeSettings?.store_name || 'CuteCart';
-    const message = `Hi ${invoice.customer_name || 'Customer'},
+    let message = `Hi ${invoice.customer_name || 'Customer'},
 
 Thank you for your purchase!
 
 Invoice: ${invoice.invoice_number}
-Total: Rs ${invoice.total.toFixed(2)}
+Total: Rs ${invoice.total.toFixed(2)}`;
 
-${storeName}`;
+    // Add loyalty points information
+    if (invoice.loyalty_points_used && invoice.loyalty_points_used > 0) {
+      message += `\nLoyalty Points Used: ${invoice.loyalty_points_used}`;
+    }
+    if (invoice.loyalty_points_earned && invoice.loyalty_points_earned > 0) {
+      message += `\nLoyalty Points Earned: ${invoice.loyalty_points_earned}`;
+    }
+
+    message += `\n\n${storeName}`;
     
     // Download PDF first
     this.downloadPDF(pdfBlob, `Invoice-${invoice.invoice_number}.pdf`);

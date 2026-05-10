@@ -157,6 +157,58 @@
             </div>
           </div>
         </div>
+        
+        <!-- Loyalty Points Section -->
+        <div class="loyalty-points-section" *ngIf="selectedCustomer">
+          <div class="loyalty-header">
+            <h4>💎 Loyalty Points</h4>
+            <button class="btn btn-sm btn-info" (click)="toggleLoyaltyPointsSection()">
+              {{ showLoyaltyPointsSection ? 'Hide' : 'Show' }} Points
+            </button>
+          </div>
+          
+          <div class="loyalty-content" *ngIf="showLoyaltyPointsSection">
+            <div class="loyalty-info">
+              <div class="available-points">
+                <span class="label">Available Points:</span>
+                <span class="points-value">{{ availableLoyaltyPoints }}</span>
+              </div>
+              
+              <div class="earn-info">
+                <small>You will earn <strong>{{ calculateLoyaltyPointsEarned() }}</strong> points from this bill (5% of subtotal)</small>
+              </div>
+            </div>
+            
+            <div class="loyalty-redemption">
+              <div class="form-group">
+                <label class="form-label">Use Loyalty Points</label>
+                <div class="input-group">
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    [(ngModel)]="loyaltyPointsToUse"
+                    (ngModelChange)="onLoyaltyPointsChange()"
+                    min="0"
+                    [max]="maxLoyaltyPointsToUse"
+                    placeholder="Enter points to use"
+                  />
+                  <small class="help-text">Max: {{ maxLoyaltyPointsToUse }} points (10% of bill)</small>
+                </div>
+              </div>
+              
+              <div class="points-breakdown" *ngIf="loyaltyPointsToUse > 0">
+                <div class="breakdown-item">
+                  <span class="label">Points Used:</span>
+                  <span class="value">-{{ loyaltyPointsToUse }}</span>
+                </div>
+                <div class="breakdown-item">
+                  <span class="label">Points Value:</span>
+                  <span class="value">-₹{{ loyaltyPointsToUse | number:'1.2-2' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Cart Items Table -->
@@ -414,6 +466,14 @@
         <div class="invoice-total-row" *ngIf="discount > 0">
           <span>Discount:</span>
           <span>-₹{{ discount | number:'1.2-2' }}</span>
+        </div>
+        <div class="invoice-total-row" *ngIf="loyaltyPointsToUse > 0">
+          <span>Loyalty Points Used:</span>
+          <span>-{{ loyaltyPointsToUse }} points (-₹{{ loyaltyPointsToUse | number:'1.2-2' }})</span>
+        </div>
+        <div class="invoice-total-row" *ngIf="calculateLoyaltyPointsEarned() > 0">
+          <span>Loyalty Points Earned:</span>
+          <span>+{{ calculateLoyaltyPointsEarned() }} points</span>
         </div>
         <div class="invoice-total-row grand-total-invoice">
           <span>Total:</span>

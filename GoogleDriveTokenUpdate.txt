@@ -1,0 +1,12 @@
+1. open command prompt in D:\CuteCart\backend\
+2. run command: node src/scripts/get-google-token.js
+
+3. paste given url in browser and autheticate with 
+vijaymohana google account.
+4. page will show: "Cannot GET /oauth2callback"
+
+5. copy token from browser url from "=" to "&scope"
+6. paste this into cmd prompt. it will give a refresh token. copy it.
+
+7. Replace copied token into backend/.env file under 
+"GOOGLE_REFRESH_TOKEN=XXXXXXX" save file and restart backend.

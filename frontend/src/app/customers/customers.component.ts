@@ -12,6 +12,7 @@ interface Customer {
   first_purchase_date: string;
   last_purchase_date: string;
   status: string;
+  loyalty_points?: number;
 }
 
 interface CustomerStatistics {
@@ -21,6 +22,7 @@ interface CustomerStatistics {
   inactiveCustomers: number;
   avgPurchaseValue: number;
   topCustomer: any;
+  totalLoyaltyPoints?: number;
 }
 
 @Component({
@@ -68,6 +70,9 @@ export class CustomersComponent implements OnInit {
       next: (data) => {
         console.log('Customers loaded:', data);
         this.customers = data || [];
+        // Calculate total loyalty points
+        const totalLoyaltyPoints = this.customers.reduce((sum, customer) => sum + (customer.loyalty_points || 0), 0);
+        this.statistics = { ...this.statistics, totalLoyaltyPoints };
         this.applyFilters();
         this.loading = false;
         this.cdr.detectChanges();

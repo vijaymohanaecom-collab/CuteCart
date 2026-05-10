@@ -581,3 +581,177 @@
     font-size: 14px;
   }
 }
+
+/* Salary Calculation Styles */
+.salary-calculation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.attendance-validation {
+  margin-bottom: 20px;
+}
+
+.alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+}
+
+.attendance-summary,
+.salary-result {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.attendance-summary h4,
+.salary-result h4 {
+  margin: 0 0 16px 0;
+  color: #495057;
+  font-size: 18px;
+  border-bottom: 2px solid #dee2e6;
+  padding-bottom: 8px;
+}
+
+.summary-grid,
+.calculation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.summary-item,
+.calculation-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.summary-item .label,
+.calculation-item .label {
+  font-weight: 600;
+  color: #6c757d;
+}
+
+.summary-item .value,
+.calculation-item .value {
+  font-weight: 700;
+  color: #495057;
+}
+
+.summary-item.present .value {
+  color: #28a745;
+}
+
+.summary-item.half-day .value {
+  color: #ffc107;
+}
+
+.summary-item.absent .value {
+  color: #dc3545;
+}
+
+.summary-item.leave .value {
+  color: #17a2b8;
+}
+
+.summary-item.week-off .value {
+  color: #6c757d;
+}
+
+.summary-item.holiday .value {
+  color: #e83e8c;
+}
+
+.summary-item.payable .value {
+  color: #28a745;
+  font-size: 16px;
+}
+
+.calculation-item.net-salary {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+}
+
+.calculation-item.net-salary .label,
+.calculation-item.net-salary .value {
+  color: white;
+}
+
+.calculation-item.net-salary .value {
+  font-size: 18px;
+}
+
+/* Modal Large */
+.modal-large {
+  max-width: 800px;
+  width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Month Navigation Buttons */
+.month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.month-navigation button {
+  white-space: nowrap;
+}
+
+.month-display {
+  margin: 0;
+  color: #495057;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .summary-grid,
+  .calculation-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .month-navigation {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .month-navigation button {
+    width: 100%;
+  }
+  
+  .modal-large {
+    width: 95vw;
+    max-height: 95vh;
+  }
+}
